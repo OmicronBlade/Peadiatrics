@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEPA / SIMPACT — Drug Reference</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body data-page="drugs">
+
+<!-- navbar injected by site.js -->
+
+<div class="patientbar">
+  <div class="pb-inner">
+    <div class="pb-title">
+      <h1>Paediatric Anaesthesia Drug Reference</h1>
+      <div class="tag">MEPA / SIMPACT · every dose live for the entered weight</div>
+    </div>
+    <div class="field">
+      <label for="ageVal">Age</label>
+      <div class="row">
+        <input id="ageVal" type="number" min="0" step="0.5" inputmode="decimal" placeholder="—">
+        <select id="ageUnit">
+          <option value="years" selected>years</option>
+          <option value="months">months</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="measWt">Measured weight</label>
+      <div class="row">
+        <input id="measWt" type="number" min="0" step="0.1" inputmode="decimal" placeholder="if known">
+        <span class="unit">kg</span>
+      </div>
+    </div>
+    <div class="estwt" id="estWtBox">
+      <div class="lbl" id="estWtLbl">Est. weight</div>
+      <div class="val" id="estWtVal">—</div>
+    </div>
+    <button class="pb-clear" id="clearBtn" title="Reset patient">Reset</button>
+  </div>
+  <div class="noweight" id="noWeight">Enter an age (or a measured weight) to calculate doses. Age also sets ETT size and normal vital signs.</div>
+</div>
+
+<div class="wrap">
+  <aside class="selector">
+    <h2>Sections</h2>
+    <div id="selectorList"></div>
+  </aside>
+  <main class="content" id="content"></main>
+</div>
+
+<div class="footer">
+  <span><b>MEPA / SIMPACT</b> · Guidelines: APA · DAS · AAGBI · RCUK · RXH local protocols · SAMF</span>
+  <span>Live reference — always <b>verify against the SAMF</b> and your local formulary. Doses shown with working; check every number.</span>
+</div>
+
+<script src="assets/calc.js"></script>
+<script src="assets/site.js"></script>
+<script>
+/* ---- drug data (shared with the interactive tool) ---- */
+const DRUGS = [
+  {c:'cir', name:'Adrenaline — arrest', note:'IV/IO, q3–5 min', perKg:10, unit:'mcg', rxh:'same (q4min)', same:true},
+  {c:'cir', name:'Adrenaline — anaphylaxis', note:'IM 1:1000, repeat 5 min', special:'IM by age band', rxh:'IV 1 mcg/kg + IM 10 mcg/kg'},
+  {c:'air', name:'Atropine', note:'IV/IO · max 4 mg', perKg:20, unit:'mcg', max:4000, rxh:'0.02 mg/kg', same:true},
+  {c:'air', name:'Suxamethonium', note:'IV (IM 4 mg/kg if no access)', perKg:1.5, unit:'mg', rxh:'—', same:true},
+  {c:'air', name:'Rocuronium', note:'RSI, IV', perKg:1.2, unit:'mg', rxh:'—', same:true},
+  {c:'neu', name:'Propofol', note:'induction / deepen, IV', perKg:2.5, unit:'mg', rxh:'—', same:true},
+  {c:'met', name:'Dantrolene — MH', note:'IV, repeat q5min → 30 mg/kg', perKg:2.5, unit:'mg', rxh:'2.5 mg/kg q5min', same:true},
+  {c:'neu', name:'Intralipid 20% — LAST', note:'bolus, then infusion', perKg:1.5, unit:'mL', rxh:'—', same:true},
+  {c:'air', name:'Salbutamol — IV', note:'slow bolus', perKg:15, unit:'mcg', rxh:'neb <5yr 2.5mg / >5yr 5mg'},
+  {c:'cir', name:'Amiodarone', note:'shockable arrest / arrhythmia', perKg:5, unit:'mg', max:300, rxh:'in 5% dex over 30 min (arrhythmia)'},
+  {c:'cir', name:'Adenosine — SVT 1st', note:'rapid push + flush', perKg:100, unit:'mcg', max:6000, rxh:'100/200/300 mcg/kg, max 12mg'},
+  {c:'cir', name:'Fluid bolus', note:'crystalloid, titrate', perKg:10, unit:'mL', rxh:'5 mL/kg → 20 mL/kg max', prefix:'', suffix:'–'+'', special2:true},
+  {c:'met', name:'Dextrose 10%', note:'hypoglycaemia, IV/IO', perKg:2, unit:'mL', rxh:'2 mL/kg', same:true},
+  {c:'met', name:'Calcium chloride 10%', note:'IV slow · max 10 mL', perKg:0.15, unit:'mL', max:10, rxh:'0.1–0.2 mL/kg', same:true},
+  {c:'met', name:'Calcium gluconate 10%', note:'IV slow · max 20 mL', perKg:0.5, unit:'mL', max:20, rxh:'0.3–0.5 mL/kg', same:true},
+  {c:'cir', name:'Lignocaine', note:'IV', perKg:1, unit:'mg', rxh:'1 mg/kg', same:true},
+  {c:'neu', name:'Magnesium sulphate', note:'IVI over 10–20 min', perKg:40, unit:'mg', max:2000, rxh:'25–50 mg/kg', same:true},
+  {c:'neu', name:'Hydrocortisone', note:'anaphylaxis', perKg:3, unit:'mg', rxh:'2–4 mg/kg (RXH weight-based)'},
+  {c:'neu', name:'Naloxone', note:'post-op sedation · repeat q2min', perKg:2, unit:'mcg', rxh:'2 mcg/kg', same:true},
+  {c:'met', name:'Mannitol', note:'↑ICP / diuresis', perKg:0.5, unit:'g', rxh:'0.25–0.5 g/kg', same:true},
+  {c:'met', name:'Sodium bicarbonate 8.4%', note:'if gas unavailable', perKg:1, unit:'mL', rxh:'BE×wt/6 (>5kg)', same:true},
+];
+
+function renderDrugTable(){
+  const w = estimateWeight();
+  let rows = DRUGS.map(d=>{
+    let liveCell;
+    if(d.special){ liveCell = `<td class="live noval">${d.special}</td>`; }
+    else if(!w){ liveCell = `<td class="live noval">—</td>`; }
+    else {
+      const c = calcDose(d);
+      liveCell = `<td class="live">${c.result}<span class="w">${c.working}</span></td>`;
+    }
+    const rxhCls = d.same ? 'rxh same' : 'rxh';
+    return `<tr>
+      <th><span class="classdot cd-${d.c}"></span>${d.name}<small>${d.note}</small></th>
+      <td>${d.special?d.special:d.perKg+' '+d.unit+'/kg'}${d.max?'<br><small style="color:var(--muted)">max '+d.max+' '+d.unit+'</small>':''}</td>
+      <td class="${rxhCls}">${d.rxh||'—'}</td>
+      ${liveCell}
+    </tr>`;
+  }).join('');
+  return `<div class="drugwrap"><table class="drugs">
+    <thead><tr>
+      <th>Drug / indication</th><th>Dose (APA/DAS/RCUK)</th><th>RXH if different</th>
+      <th>For this patient${w?' ('+w.kg+' kg)':''}</th>
+    </tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="hint">Live column computes exact dose from the active weight and shows the arithmetic. Age-band drugs (anaphylaxis adrenaline) are not weight-linear — dose by the stated band.</p>`;
+}
+
+/* ---- page sections ---- */
+function ALGOS(){ return [
+  {id:'alldrugs', group:'Reference', c:'met', title:'All Emergency Drugs (live table)', pill:'Reference',
+   type:'custom', html:()=>renderDrugTable()},
+  {id:'ett', group:'Reference', c:'air', title:'ETT · Vitals · Cardioversion', pill:'Reference',
+   type:'custom', html:()=>{
+     const s=ettSize(), l=ettLength();
+     return `<div class="refgrid">
+       <div class="refcard"><h4>ETT cuffed (RXH)</h4><div class="big">${s!=null?s+' <small>mm ID</small>':'—'}</div><div class="note">age/4 + 3.5${S.ageYears!=null?` · age ${S.ageYears} yr`:''}</div></div>
+       <div class="refcard"><h4>ETT length (oral)</h4><div class="big">${l!=null?l+' <small>cm</small>':'—'}</div><div class="note">size × 3 (+2 nasal)</div></div>
+       <div class="refcard"><h4>Defib</h4><div class="big">4 <small>J/kg</small></div><div class="note">every cycle</div></div>
+       <div class="refcard"><h4>Adrenaline infusion</h4><div class="big">0.05–0.3 <small>mcg/kg/min</small></div></div>
+     </div>
+     <h4 style="margin:14px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);">Cardioversion / defibrillation energy</h4>
+     ${(()=>{const w=estimateWeight();const j=(x)=>w?`${fmtNum(x*w.kg)} J`:`${x} J/kg`;
+       return `<table class="mini"><thead><tr><th>Indication</th><th>1st</th><th>2nd</th></tr></thead><tbody>
+         <tr><th>SVT (synchronised)</th><td class="num">${j(1)}</td><td class="num">${j(2)}</td></tr>
+         <tr><th>VT with pulse (synchronised)</th><td class="num">${j(2)}</td><td class="num">${j(4)}</td></tr>
+         <tr><th>Defibrillation (VF/pVT)</th><td class="num" colspan="2">${j(4)}</td></tr>
+       </tbody></table>${w?'':'<p class="hint">Enter weight for joules.</p>'}`;})()}
+     <h4 style="margin:14px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);">Normal vital signs</h4>
+     ${renderVitals()}`;
+   }},
+]; }
+
+MEPA.init({
+  algos: ALGOS,
+  ntsGroups: [],          // a drug reference doesn't need NTS/NAP4 blocks
+  nap4Groups: [],
+  autoOpenFirst: true,    // open the drug table straight away
+  emptyTitle: 'Drug reference',
+  emptyBody: 'Select a section on the left.'
+});
+</script>
+</body>
+</html>

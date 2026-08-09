@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEPA / SIMPACT — Paediatric Anaesthesia Emergency Card</title>
+<style>
+  :root{
+    --ink:#12161c;
+    --paper:#ffffff;
+    --line:#c9ced6;
+    --line-strong:#8a919c;
+    --muted:#5a616b;
+    --airway:#1d4ed8;
+    --airway-bg:#eaf0ff;
+    --circ:#b91c1c;
+    --circ-bg:#fdeaea;
+    --metab:#7c2d12;
+    --metab-bg:#fbeee4;
+    --neuro:#6b21a8;
+    --neuro-bg:#f4eafb;
+    --accent:#0f766e;
+    --accent-bg:#e5f4f2;
+    --warn:#92400e;
+    --warn-bg:#fff4e0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#eceff3;color:var(--ink);
+    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+    font-size:11px;line-height:1.32;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .page{width:210mm;min-height:297mm;background:var(--paper);margin:10px auto;
+    padding:11mm 10mm 9mm;box-shadow:0 2px 14px rgba(0,0,0,.14);position:relative;}
+  /* ---- header ---- */
+  .masthead{display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:2.5px solid var(--ink);padding-bottom:4px;margin-bottom:6px;}
+  .masthead h1{font-size:18px;margin:0;letter-spacing:.2px;font-weight:800;}
+  .masthead .sub{font-size:10px;color:var(--muted);margin-top:2px;font-weight:600;
+    text-transform:uppercase;letter-spacing:1.1px;}
+  .masthead .ctx{text-align:right;font-size:9.5px;color:var(--muted);line-height:1.5;}
+  .masthead .ctx b{color:var(--ink);}
+  /* ---- weight banner ---- */
+  .wtnote{background:var(--warn-bg);border:1px solid #e2b877;border-left:4px solid var(--warn);
+    padding:5px 9px;margin-bottom:9px;font-size:10px;border-radius:3px;}
+  .wtnote b{color:var(--warn);}
+  /* ---- drug matrix ---- */
+  .matrix-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;
+    margin:0 0 5px;display:flex;align-items:center;gap:8px;}
+  .matrix-title::after{content:"";flex:1;height:2px;background:var(--ink);}
+  table.drugs{width:100%;border-collapse:collapse;font-size:9.4px;margin-bottom:4px;}
+  table.drugs th,table.drugs td{border:1px solid var(--line);padding:2px 4px;text-align:center;vertical-align:middle;}
+  table.drugs thead th{background:var(--ink);color:#fff;font-size:8.8px;text-transform:uppercase;
+    letter-spacing:.4px;font-weight:700;padding:4px 3px;}
+  table.drugs tbody th{text-align:left;background:#f4f6f9;font-weight:700;font-size:9.2px;
+    white-space:nowrap;position:relative;}
+  table.drugs tbody th small{display:block;font-weight:500;color:var(--muted);font-size:8.2px;}
+  .wtband{background:#eef1f5 !important;font-weight:800;}
+  .agecol{font-size:8px;color:var(--muted);font-weight:600;}
+  .dose{font-variant-numeric:tabular-nums;}
+  td.rxh{background:#fbf6e8 !important;font-size:8.6px;color:#5a4a12;font-weight:600;}
+  td.rxh.same{color:#b3b8c0;font-weight:400;}
+  .drugs tbody tr:nth-child(even) td{background:#fbfcfd;}
+  .rule-row th,.rule-row td{border-top:2px solid var(--line-strong);}
+  /* colour dots for drug class */
+  .tag{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle;}
+  .t-air{background:var(--airway);}
+  .t-cir{background:var(--circ);}
+  .t-met{background:var(--metab);}
+  .t-neu{background:var(--neuro);}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:8.8px;color:var(--muted);margin:3px 0 6px;}
+  .legend span{display:flex;align-items:center;}
+  /* ---- formulae strip ---- */
+  .formulae{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:7px;}
+  .fcard{border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:3px;
+    padding:5px 7px;background:var(--accent-bg);}
+  .fcard h4{margin:0 0 2px;font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);font-weight:800;}
+  .fcard .val{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .fcard .val small{font-weight:500;color:var(--muted);font-size:8.5px;}
+  /* ---- algorithms ---- */
+  .algo-head{background:var(--ink);color:#fff;padding:6px 10px;border-radius:3px 3px 0 0;
+    display:flex;justify-content:space-between;align-items:center;margin-top:3px;}
+  .algo-head h2{margin:0;font-size:13px;font-weight:800;letter-spacing:.3px;}
+  .algo-head .pill{font-size:8.5px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:20px;
+    text-transform:uppercase;letter-spacing:.7px;font-weight:700;}
+  .algo{border:1px solid var(--line);border-top:none;border-radius:0 0 3px 3px;
+    padding:5px 11px 6px;margin-bottom:6px;background:#fff;}
+  .algo.air{border-top:3px solid var(--airway);}
+  .algo.cir{border-top:3px solid var(--circ);}
+  .algo.met{border-top:3px solid var(--metab);}
+  .algo.neu{border-top:3px solid var(--neuro);}
+  .algo ol{margin:0;padding-left:0;counter-reset:step;list-style:none;}
+  .algo ol[start="4"]{counter-reset:step 3;}
+  .algo ol[start="5"]{counter-reset:step 4;}
+  .algo ol[start="6"]{counter-reset:step 5;}
+  .algo ol[start="7"]{counter-reset:step 6;}
+  .algo ol>li{position:relative;padding:1.5px 0 1.5px 26px;margin-bottom:1px;counter-increment:step;
+    border-bottom:1px dotted #e2e6ec;}
+  .algo ol>li:last-child{border-bottom:none;}
+  .algo ol>li::before{content:counter(step);position:absolute;left:0;top:3px;
+    width:18px;height:18px;border-radius:50%;background:var(--ink);color:#fff;
+    font-size:9.5px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .algo.air ol>li::before{background:var(--airway);}
+  .algo.cir ol>li::before{background:var(--circ);}
+  .algo.met ol>li::before{background:var(--metab);}
+  .algo.neu ol>li::before{background:var(--neuro);}
+  .algo b{font-weight:700;}
+  .algo .drug{background:#f1f3f7;padding:0 3px;border-radius:2px;font-weight:700;
+    font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .algo .stop{color:var(--circ);font-weight:800;}
+  .algo .sub{color:var(--muted);font-size:9.5px;}
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+  .algo ul.plain{margin:2px 0 0;padding-left:15px;}
+  .algo ul.plain li{margin-bottom:1px;}
+  .flag{display:inline-block;background:var(--warn-bg);border:1px solid #e2b877;color:var(--warn);
+    font-size:8.5px;font-weight:700;padding:1px 6px;border-radius:3px;margin-top:5px;}
+  .sec-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;
+    color:var(--muted);margin:14px 0 6px;padding-bottom:3px;border-bottom:1.5px solid var(--line);}
+  .footer{position:absolute;bottom:5mm;left:10mm;right:10mm;display:flex;
+    justify-content:space-between;font-size:8px;color:var(--muted);
+    border-top:1px solid var(--line);padding-top:4px;}
+  .footer b{color:var(--ink);}
+  .crm{background:var(--accent-bg);border:1px solid #9ecfc9;border-radius:3px;padding:6px 10px;margin-bottom:7px;}
+  .crm h3{margin:0 0 3px;font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;font-weight:800;}
+  .crm ul{margin:0;padding-left:15px;columns:2;column-gap:18px;font-size:9.4px;}
+  .crm li{margin-bottom:1px;break-inside:avoid;}
+  /* ---- vitals + cardioversion tables ---- */
+  .minigrid{display:grid;grid-template-columns:2fr 1fr;gap:9px;margin-bottom:7px;}
+  table.mini{width:100%;border-collapse:collapse;font-size:9px;}
+  table.mini caption{text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;
+    letter-spacing:.6px;color:var(--accent);padding-bottom:3px;}
+  table.mini th,table.mini td{border:1px solid var(--line);padding:2.5px 5px;text-align:center;}
+  table.mini thead th{background:var(--accent);color:#fff;font-size:8.4px;text-transform:uppercase;font-weight:700;}
+  table.mini tbody th{text-align:left;background:#f4f6f9;font-weight:700;white-space:nowrap;}
+  table.mini tbody tr:nth-child(even) td{background:#fbfcfd;}
+  table.mini .u{font-size:7.6px;color:var(--muted);font-weight:500;}
+  /* ---- data panel (key : value reference rows) ---- */
+  .dpanel dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:0;}
+  .dpanel dt{font-weight:700;padding:2px 10px 2px 0;border-bottom:1px dotted #e2e6ec;white-space:nowrap;}
+  .dpanel dd{margin:0;padding:2px 0;border-bottom:1px dotted #e2e6ec;}
+  .dpanel dl>dt:last-of-type,.dpanel dl>dd:last-of-type{border-bottom:none;}
+  .dpanel .drug{background:#f1f3f7;padding:0 3px;border-radius:2px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .stepnum{display:inline-flex;width:15px;height:15px;border-radius:50%;background:var(--metab);
+    color:#fff;font-size:8.5px;font-weight:700;align-items:center;justify-content:center;margin-right:5px;vertical-align:middle;}
+  /* ---------- top nav (screen only) ---------- */
+  .topnav{background:#0a0d12;color:#fff;border-bottom:1px solid #2a313d;}
+  .topnav-inner{max-width:210mm;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:4px;}
+  .topnav .brand{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+    color:#7d8794;margin-right:16px;padding:11px 0;white-space:nowrap;}
+  .topnav a{color:#c4ccd6;text-decoration:none;font-size:13.5px;font-weight:600;
+    padding:12px 15px;border-bottom:3px solid transparent;transition:color .12s,border-color .12s;}
+  .topnav a:hover{color:#fff;}
+  .topnav a.active{color:#fff;border-bottom-color:var(--accent);}
+  @media print{
+    .topnav{display:none;}
+    @page{size:A4;margin:0;}
+    body{background:#fff;}
+    .page{margin:0;box-shadow:none;width:210mm;min-height:0;
+      padding:7mm 8mm 6mm;page-break-after:always;break-after:page;}
+    .page:last-child{page-break-after:auto;break-after:auto;}
+    /* keep each block intact across page breaks */
+    .algo,.algo-head,.crm,table.drugs,.formulae,.cols2>div{break-inside:avoid;page-break-inside:avoid;}
+    .algo-head{break-after:avoid;page-break-after:avoid;}
+    .masthead{break-after:avoid;page-break-after:avoid;}
+    .footer{position:static;margin-top:6px;break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ TOP NAV (screen only) ============ -->
+<nav class="topnav">
+  <div class="topnav-inner">
+    <span class="brand">MEPA / SIMPACT</span>
+    <a href="mepa-interactive.html">Interactive tool</a>
+    <a href="mepa-emergency-card.html" class="active">Emergency card</a>
+    <a href="mepa-drug-reference.html">Drug reference</a>
+  </div>
+</nav>
+
+<!-- ============ PAGE 1 — DRUG CARD ============ -->
+<section class="page">
+  <div class="masthead">
+    <div>
+      <h1>Paediatric Anaesthesia — Emergency Drugs</h1>
+      <div class="sub">MEPA / SIMPACT · Weight-band quick reference</div>
+    </div>
+    <div class="ctx">
+      Doses per <b>APA</b> &amp; <b>RCUK</b> paediatric emergency chart<br>
+      MH per <b>AAGBI</b> safety guideline · Anaphylaxis per <b>RCUK</b><br>
+      <b>Always confirm against the SAMF / local formulary.</b>
+    </div>
+  </div>
+
+  <div class="wtnote">
+    <b>Estimate weight (kg):</b>&nbsp; 0–12 mo → (age in mo + 9) ÷ 2 &nbsp;·&nbsp; 1–5 yr → (age + 4) × 2 &nbsp;·&nbsp; 6–12 yr → (age × 3) + 7. &nbsp;<br>Use actual/measured weight whenever available; these bands are for rapid draw-up only.
+  </div>
+
+  <p class="matrix-title">Weight-banded doses</p>
+  <table class="drugs">
+    <thead>
+      <tr>
+        <th style="text-align:left;">Drug / indication</th>
+        <th>Dose <small style="font-weight:500;">(APA/DAS/RCUK)</small></th>
+        <th style="background:#3b2f0e;">RXH</th>
+        <th>≈1&nbsp;yr<span class="agecol">10&nbsp;kg</span></th>
+        <th>≈3&nbsp;yr<span class="agecol">15&nbsp;kg</span></th>
+        <th>≈5&nbsp;yr<span class="agecol">20&nbsp;kg</span></th>
+        <th>≈8&nbsp;yr<span class="agecol">25&nbsp;kg</span></th>
+        <th>≈10&nbsp;yr<span class="agecol">30&nbsp;kg</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="rule-row">
+        <th><span class="tag t-cir"></span>ADRENALINE — Arrest <small>IV/IO, every 3–5 min</small></th>
+        <td class="dose">10 mcg/kg<br><small>0.1 mL/kg of 1:10&nbsp;000</small></td>
+        <td class="rxh same">same<br><small>q4min</small></td>
+        <td class="dose">100 mcg</td><td class="dose">150 mcg</td><td class="dose">200 mcg</td><td class="dose">250 mcg</td><td class="dose">300 mcg</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-cir"></span>ADRENALINE — Anaphylaxis <small>IM, 1:1000, repeat 5 min</small></th>
+        <td class="dose">IM by age band →</td>
+        <td class="rxh">IV 1 mcg/kg<br><small>+ IM 10 mcg/kg</small></td>
+        <td class="dose">150 mcg</td><td class="dose">150 mcg</td><td class="dose">300 mcg<br><small>(&gt;6 yr)</small></td><td class="dose">300 mcg</td><td class="dose">500 mcg<br><small>(&gt;12 yr)</small></td>
+      </tr>
+      <tr>
+        <th><span class="tag t-cir"></span>ATROPINE <small>IV/IO · max 4 mg</small></th>
+        <td class="dose">20 mcg/kg</td>
+        <td class="rxh same">0.02 mg/kg</td>
+        <td class="dose">200 mcg</td><td class="dose">300 mcg</td><td class="dose">400 mcg</td><td class="dose">500 mcg</td><td class="dose">600 mcg</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-air"></span>SUXAMETHONIUM <small>laryngospasm / RSI, IV</small></th>
+        <td class="dose">1–2 mg/kg<br><small>IM 4 mg/kg if no IV</small></td>
+        <td class="rxh same">—</td>
+        <td class="dose">10–20 mg</td><td class="dose">15–30 mg</td><td class="dose">20–40 mg</td><td class="dose">25–50 mg</td><td class="dose">30–60 mg</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-air"></span>ROCURONIUM <small>RSI, IV</small></th>
+        <td class="dose">1.2 mg/kg</td>
+        <td class="rxh same">—</td>
+        <td class="dose">12 mg</td><td class="dose">18 mg</td><td class="dose">24 mg</td><td class="dose">30 mg</td><td class="dose">36 mg</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-neu"></span>PROPOFOL <small>induction / deepen, IV</small></th>
+        <td class="dose">2–3 mg/kg</td>
+        <td class="rxh same">—</td>
+        <td class="dose">20–30 mg</td><td class="dose">30–45 mg</td><td class="dose">40–60 mg</td><td class="dose">50–75 mg</td><td class="dose">60–90 mg</td>
+      </tr>
+      <tr class="rule-row">
+        <th><span class="tag t-met"></span>DANTROLENE — MH <small>IV, repeat q5min → max 30 mg/kg</small></th>
+        <td class="dose">2.5 mg/kg</td>
+        <td class="rxh same">2.5 mg/kg q5min<br><small>up to 30 mg/kg</small></td>
+        <td class="dose">25 mg</td><td class="dose">37.5 mg</td><td class="dose">50 mg</td><td class="dose">62.5 mg</td><td class="dose">75 mg</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-met"></span>INTRALIPID 20% — LAST <small>bolus, then infusion</small></th>
+        <td class="dose">1.5 mL/kg</td>
+        <td class="rxh same">—</td>
+        <td class="dose">15 mL</td><td class="dose">22.5 mL</td><td class="dose">30 mL</td><td class="dose">37.5 mL</td><td class="dose">45 mL</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-air"></span>SALBUTAMOL — Bronchospasm <small>neb; IV 15 mcg/kg slow</small></th>
+        <td class="dose">neb 2.5–5 mg</td>
+        <td class="rxh">&lt;5 yr 2.5 mg<br>&gt;5 yr 5 mg</td>
+        <td class="dose">150 mcg</td><td class="dose">225 mcg</td><td class="dose">300 mcg</td><td class="dose">375 mcg</td><td class="dose">450 mcg</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-cir"></span>AMIODARONE <small>shockable arrest / tachyarr.</small></th>
+        <td class="dose">5 mg/kg<br><small>max 300 mg</small></td>
+        <td class="rxh">5% dex<br><small>over 30 min</small></td>
+        <td class="dose">50 mg</td><td class="dose">75 mg</td><td class="dose">100 mg</td><td class="dose">125 mg</td><td class="dose">150 mg</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-cir"></span>ADENOSINE — SVT <small>rapid push + flush</small></th>
+        <td class="dose">100 → 200 → 300<br><small>mcg/kg</small></td>
+        <td class="rxh same">100/200/300<br><small>max 12 mg</small></td>
+        <td class="dose">1→2→3 mg</td><td class="dose">1.5→3→4.5</td><td class="dose">2→4→6 mg</td><td class="dose">2.5→5→7.5</td><td class="dose">3→6→9 mg</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-cir"></span>FLUID BOLUS <small>crystalloid, titrate</small></th>
+        <td class="dose">10–20 mL/kg</td>
+        <td class="rxh">5 mL/kg<br><small>→ 20 mL/kg max</small></td>
+        <td class="dose">100–200</td><td class="dose">150–300</td><td class="dose">200–400</td><td class="dose">250–500</td><td class="dose">300–600</td>
+      </tr>
+      <tr class="rule-row">
+        <th><span class="tag t-met"></span>DEXTROSE 10% <small>hypoglycaemia, IV/IO</small></th>
+        <td class="dose">2 mL/kg</td>
+        <td class="rxh same">2 mL/kg</td>
+        <td class="dose">20 mL</td><td class="dose">30 mL</td><td class="dose">40 mL</td><td class="dose">50 mL</td><td class="dose">60 mL</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-met"></span>CALCIUM CHLORIDE 10% <small>IV slow · max 10 mL</small></th>
+        <td class="dose">0.1–0.2 mL/kg</td>
+        <td class="rxh same">0.1–0.2 mL/kg<br><small>max 10 mL</small></td>
+        <td class="dose">1–2 mL</td><td class="dose">1.5–3 mL</td><td class="dose">2–4 mL</td><td class="dose">2.5–5 mL</td><td class="dose">3–6 mL</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-met"></span>CALCIUM GLUCONATE 10% <small>IV slow · max 20 mL</small></th>
+        <td class="dose">0.5 mL/kg</td>
+        <td class="rxh same">0.3–0.5 mL/kg<br><small>max 20 mL</small></td>
+        <td class="dose">5 mL</td><td class="dose">7.5 mL</td><td class="dose">10 mL</td><td class="dose">12.5 mL</td><td class="dose">15 mL</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-cir"></span>LIGNOCAINE <small>IV</small></th>
+        <td class="dose">1 mg/kg</td>
+        <td class="rxh same">1 mg/kg</td>
+        <td class="dose">10 mg</td><td class="dose">15 mg</td><td class="dose">20 mg</td><td class="dose">25 mg</td><td class="dose">30 mg</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-neu"></span>MAGNESIUM SULPHATE <small>IVI over 10–20 min</small></th>
+        <td class="dose">25–50 mg/kg<br><small>max 2 g</small></td>
+        <td class="rxh same">25–50 mg/kg</td>
+        <td class="dose">0.25–0.5 g</td><td class="dose">0.4–0.75</td><td class="dose">0.5–1 g</td><td class="dose">0.6–1.25</td><td class="dose">0.75–1.5</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-neu"></span>HYDROCORTISONE <small>anaphylaxis</small></th>
+        <td class="dose">by age →</td>
+        <td class="rxh">2–4 mg/kg<br><small>(RXH: weight-based)</small></td>
+        <td class="dose">50 mg</td><td class="dose">100 mg</td><td class="dose">100 mg</td><td class="dose">100 mg</td><td class="dose">200 mg<br><small>(&gt;12 yr)</small></td>
+      </tr>
+      <tr>
+        <th><span class="tag t-neu"></span>CHLORPHENAMINE <small>anaphylaxis (2nd line)</small></th>
+        <td class="dose">by age →</td>
+        <td class="rxh same">—</td>
+        <td class="dose">2.5 mg</td><td class="dose">2.5 mg</td><td class="dose">5 mg<br><small>(6–12)</small></td><td class="dose">5 mg</td><td class="dose">10 mg<br><small>(&gt;12 yr)</small></td>
+      </tr>
+      <tr>
+        <th><span class="tag t-air"></span>NALOXONE <small>post-op sedation · repeat q2min</small></th>
+        <td class="dose">2 mcg/kg</td>
+        <td class="rxh same">2 mcg/kg</td>
+        <td class="dose">20 mcg</td><td class="dose">30 mcg</td><td class="dose">40 mcg</td><td class="dose">50 mcg</td><td class="dose">60 mcg</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-neu"></span>MANNITOL <small>↑ICP / diuresis</small></th>
+        <td class="dose">0.5 g/kg</td>
+        <td class="rxh same">0.25–0.5 g/kg</td>
+        <td class="dose">5 g</td><td class="dose">7.5 g</td><td class="dose">10 g</td><td class="dose">12.5 g</td><td class="dose">15 g</td>
+      </tr>
+      <tr>
+        <th><span class="tag t-met"></span>SODIUM BICARBONATE 8.4% <small>see formula if BE known</small></th>
+        <td class="dose">1 mL/kg<br><small>if gas unavailable</small></td>
+        <td class="rxh same">BE×wt/6 (&gt;5kg)<br><small>BE×wt/4 (&lt;5kg)</small></td>
+        <td class="dose">10 mL</td><td class="dose">15 mL</td><td class="dose">20 mL</td><td class="dose">25 mL</td><td class="dose">30 mL</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="legend">
+    <span><span class="tag t-air"></span>Airway / respiratory</span>
+    <span><span class="tag t-cir"></span>Circulation / arrest</span>
+    <span><span class="tag t-met"></span>Metabolic</span>
+    <span><span class="tag t-neu"></span>Anaesthetic / adjunct</span>
+  </div>
+
+  <div class="wtnote">
+    <b>Bronchospastic mix:</b> Lignocaine 2% 1 mL + Adrenaline 50 mcg (0.5 mL of 1:1000) + N.Saline 0.5 mL → give <b>&lt;1 yr 1 mL, &gt;1 yr 2 mL</b>.
+  </div>
+
+  <div class="formulae">
+    <div class="fcard"><h4>ETT cuffed (RXH)</h4><div class="val">age⁄4 + 3.5 <small>mm ID</small></div></div>
+    <div class="fcard"><h4>ETT length (oral)</h4><div class="val">size×3 <small>+2 nasal, cm at lip</small></div></div>
+    <div class="fcard"><h4>Defib — DC shock</h4><div class="val">4 J/kg <small>every cycle</small></div></div>
+    <div class="fcard"><h4>Adrenaline infusion</h4><div class="val">0.05–0.3 <small>mcg/kg/min</small></div></div>
+  </div>
+
+  <div class="minigrid">
+    <table class="mini">
+      <caption>Normal vital signs by age (RXH)</caption>
+      <thead>
+        <tr><th>Age</th><th>Resp rate <span class="u">/min</span></th><th>Heart rate <span class="u">/min</span></th><th>Systolic BP <span class="u">mmHg</span></th></tr>
+      </thead>
+      <tbody>
+        <tr><th>Neonate</th><td>25–50</td><td>120–170</td><td>80–90 <span class="u">(&lt;6 mo)</span></td></tr>
+        <tr><th>1 year</th><td>20–40</td><td>110–160</td><td>85–100 <span class="u">(2–4 yr)</span></td></tr>
+        <tr><th>2–7 yr</th><td>20–30</td><td>90–140 <span class="u">(3 yr)</span></td><td>90–110 <span class="u">(5–11 yr)</span></td></tr>
+        <tr><th>8–11 yr</th><td>15–25</td><td>70–120</td><td>100–120 <span class="u">(&gt;12 yr)</span></td></tr>
+        <tr><th>&gt;12 yr</th><td>12–24</td><td>60–110 <span class="u">(&gt;14 yr)</span></td><td>—</td></tr>
+      </tbody>
+    </table>
+    <table class="mini">
+      <caption>DC energy (synchronised unless *)</caption>
+      <thead>
+        <tr><th>Indication</th><th>1st</th><th>2nd</th></tr>
+      </thead>
+      <tbody>
+        <tr><th>SVT</th><td>1 J/kg</td><td>2 J/kg</td></tr>
+        <tr><th>VT (with pulse)</th><td>2 J/kg</td><td>4 J/kg</td></tr>
+        <tr><th>Defib* <span class="u">VF/pVT</span></th><td colspan="2">4 J/kg</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="wtnote" style="margin-bottom:0;">
+    <b>Premature MAP</b> target = gestational age (weeks).
+  </div>
+
+  <div class="footer">
+    <span>Page 1</span>
+    <span>Doses: APA/DAS/RCUK · RXH column = Red Cross local protocol · Verify against local formulary</span>
+  </div>
+</section>
+
+<section class="page sheet">
+  <div class="masthead">
+    <div>
+      <h1>Crisis Algorithms — Airway / Respiratory</h1>
+      <div class="sub">MEPA / SIMPACT · Commonwealth guidelines (APA · DAS · AAGBI · RCUK)</div>
+    </div>
+    <div class="ctx">Declare the emergency early · assign roles<br><b>Call for help before you need it.</b></div>
+  </div>
+  <div class="crm">
+    <h3>Non-technical skills — scored in every scenario</h3>
+    <ul>
+      <li><b>Declare</b> the emergency out loud &amp; name it</li>
+      <li><b>Call for help</b> early — senior + runner</li>
+      <li><b>Allocate roles</b>: airway, drugs, CPR, scribe</li>
+      <li><b>Closed-loop</b> communication for every drug</li>
+      <li><b>Think aloud</b> — share the mental model</li>
+      <li><b>Re-evaluate</b> after each intervention</li>
+    </ul>
+  </div>
+  <div class="algo-head"><h2>Laryngospasm</h2><span class="pill">Airway</span></div>
+  <div class="algo air">
+        <div class="cols2">
+      <ol><li><b>Call for help</b>; remove the stimulus (secretions, airway, surgery).</li><li><b>100% O₂</b> + <b>CPAP</b> via tight-fitting mask, close APL valve.</li><li><b>Larson's manoeuvre</b> — firm pressure at the laryngospasm notch behind ear lobes, jaw thrust.</li></ol>
+      <ol start="4"><li><b>Deepen</b> anaesthesia: <span class="drug">Propofol 2–3 mg/kg</span> IV.</li><li>If unbroken / desaturating: <span class="drug">Suxamethonium 1–2 mg/kg</span> IV (<span class="drug">4 mg/kg IM</span> if no access) + <span class="drug">Atropine 20 mcg/kg</span>.</li><li>Ventilate, intubate if needed; watch for <b>negative-pressure pulmonary oedema</b>.</li></ol>
+    </div>
+        <span class="flag">Bradycardia in a hypoxic child = Pre-arrest!!! — Treat the hypoxia</span>
+      </div>
+
+  <div class="algo-head"><h2>Bronchospasm</h2><span class="pill">Airway</span></div>
+  <div class="algo air">
+        <div class="cols2">
+      <ol><li><b>100% O₂</b>; exclude mechanical causes — tube position, kink, blockage, breathing circuit.</li><li><b>Deepen</b> anaesthesia (volatile / Propofol); consider Ketamine.</li><li><span class="drug">Salbutamol</span> — MDI via circuit or neb 2.5–5 mg; IV <span class="drug">15 mcg/kg</span> slow.</li></ol>
+      <ol start="4"><li>Severe / silent chest: <span class="drug">Adrenaline 1 mcg/kg</span> IV titrated, or IM.</li><li>Add <span class="drug">Magnesium 40 mg/kg</span> IV, <span class="drug">Hydrocortisone</span>, Ipratropium.</li><li>Hand-ventilate — feel compliance; allow long expiratory time (avoid gas trapping).</li></ol>
+    </div>
+      </div>
+
+  <div class="algo-head"><h2>Inhaled Foreign Body / Rigid Bronchoscopy</h2><span class="pill">Airway · Shared airway</span></div>
+  <div class="algo air">
+    <div class="cols2">
+      <ol>
+        <li><b>Don't convert a partial obstruction to complete.</b> Keep the child <b>calm, upright, undisturbed</b>; senior anaesthetist + ENT + theatre before induction.</li>
+        <li><b>Maintain spontaneous ventilation</b> — <b>inhalational (sevoflurane) induction in 100% O₂</b>, no paralysis until the airway is controlled and the surgeon is scrubbed.</li>
+        <li>Deepen adequately; topicalise the cords (Lidocaine, max 3 mg/kg) to blunt laryngospasm before instrumentation.</li>
+      </ol>
+      <ol start="4">
+        <li><b>Shared airway:</b> ventilate through the rigid bronchoscope side-arm; communicate continuously with the surgeon; TIVA helps maintain depth during instrumentation.</li>
+        <li><b>Watch for:</b> complete obstruction if the FB migrates, ball-valve air trapping, desaturation, laryngospasm on emergence, post-op subglottic oedema (Dexamethasone, nebulised Adrenaline).</li>
+        <li>If total obstruction &amp; cannot ventilate → push the FB distally into a main bronchus to ventilate the other lung, then retrieve.</li>
+      </ol>
+    </div>
+    <span class="flag">Spontaneous ventilation + inhalational technique is the safe default — paralysing before the airway is secured can lose it entirely.</span>
+  </div>
+
+</section>
+
+<section class="page sheet">
+  <div class="masthead">
+    <div>
+      <h1>Difficult Airway Pathways</h1>
+      <div class="sub">MEPA / SIMPACT · APA / DAS paediatric algorithms (1–8 yr)</div>
+    </div>
+    <div class="ctx">Give <b>100% O₂</b> &amp; <b>call for help</b> at step one, every pathway<br>Maintain <b>spontaneous ventilation</b> until the airway is secure<br><b>Don't repeat what just failed — change something.</b></div>
+  </div>
+  <div class="crm">
+    <h3>NAP4 lessons — why paediatric airways go wrong</h3>
+    <ul>
+      <li>Poor assessment &amp; <b>failure to plan for failure</b></li>
+      <li><b>Repeated intubation attempts</b> → oedema → CICO</li>
+      <li>Slow response to hypoxia → bradycardia → arrest</li>
+      <li>Failure to use the <b>LMA</b> as a rescue</li>
+      <li>Missing monitoring — <b>SpO₂ + capnography</b></li>
+      <li>Desaturation is <b>faster</b> in children (low FRC)</li>
+    </ul>
+  </div>
+  <div class="algo-head"><h2>Unanticipated Difficult Mask Ventilation</h2><span class="pill">Airway · APA/DAS Fig 1</span></div>
+  <div class="algo air">
+    <div class="cols2">
+      <ol>
+        <li><b>100% O₂ + call for help.</b> Is this <b>equipment</b> or <b>patient</b>? Check mask, circuit, O₂ supply — have a <b>self-inflating bag</b> ready.</li>
+        <li><b>Optimise head position</b> — neutral in a child; shoulder roll if &lt;6 months. Add/remove the roll as needed.</li>
+        <li><b>Airway-opening manoeuvres:</b> chin lift, jaw thrust; apply <b>PEEP/CPAP</b>; adjust or release cricoid pressure if used.</li>
+        <li><b>Insert an oropharyngeal airway</b> (if deep enough); <b>deepen anaesthesia</b> — exclude laryngospasm.</li>
+      </ol>
+      <ol start="5">
+        <li><b>Two-person technique:</b> one holds mask with both hands, the other bags. Avoid pressing soft tissue with mask fingers.</li>
+        <li><b>Decompress the stomach</b> (NG tube) — gastric inflation is common in infants and splints the diaphragm.</li>
+        <li>Still impossible / SpO₂ falling → <b>insert an LMA</b> (first choice).</li>
+        <li><b>OR</b> deepen, visualise cords, intubate. If LMA fails → move to the <b>CICO</b> pathway. <span class="sub">If ventilating well: proceed or wake — if in doubt, wake the child.</span></li>
+      </ol>
+    </div>
+    <span class="flag">Functional causes (light anaesthesia, laryngospasm, gastric inflation) are commoner than anatomical — deepen and decompress early.</span>
+  </div>
+
+  <div class="algo-head"><h2>Cannot Ventilate via LMA</h2><span class="pill">Airway · rescue</span></div>
+  <div class="algo air">
+        <div class="cols2">
+      <ol><li><b>100% O₂ + call for help.</b> The LMA is your rescue device — optimise it before abandoning it.</li><li><b>Reseat / resize:</b> check depth (light → laryngospasm), reposition head (sniffing), jaw thrust, check cuff. Try up/down a size.</li><li><b>Exclude patient causes:</b> laryngospasm (deepen: Propofol), bronchospasm, gastric distension (NG/OG), breath-stacking (disconnect).</li></ol>
+      <ol start="4"><li><b>2nd-gen LMA:</b> pass a gastric tube via the drain channel to decompress the stomach &amp; improve seal.</li><li><b>Still failing:</b> remove LMA → face-mask (two-person) or intubate (LMA as conduit).</li><li><b>Mask + LMA + intubation all fail &amp; SpO₂ falling → declare CICO</b> → front-of-neck access.</li></ol>
+    </div>
+        <span class="flag">LMA failing to ventilate is a step toward CICO — optimise fast, don't fixate.</span>
+      </div>
+
+  <div class="algo-head"><h2>Unanticipated Difficult Tracheal Intubation</h2><span class="pill">Airway · APA/DAS Fig 2</span></div>
+  <div class="algo air">
+    <div class="cols2">
+      <ol>
+        <li><b>100% O₂ + call for help.</b> Maintain oxygenation between every attempt — mask-ventilate to recover SpO₂.</li>
+        <li><b>Limit to 3–4 attempts total.</b> Each attempt must <b>change something</b> — do not repeat the identical technique.</li>
+        <li><b>Change personnel</b> (most experienced anaesthetist), <b>position</b>, or <b>equipment</b>.</li>
+      </ol>
+      <ol start="4">
+        <li><b>Optimise the view:</b> external laryngeal manipulation, adequate depth &amp; paralysis, bougie or stylet, straight blade (infants), alternate/video laryngoscope.</li>
+        <li>Larynx impossible to view → <b>insert an LMA</b> (oxygenate; may serve as a conduit for fibreoptic intubation).</li>
+        <li>LMA fails to ventilate → <b>CICO pathway</b>. <span class="sub">Ventilating adequately but not intubated: wake the child or proceed on the LMA.</span></li>
+      </ol>
+    </div>
+    <span class="flag">Repeated laryngoscopy causes airway oedema that converts a difficult airway into a CICO — a change of approach, not more attempts.</span>
+  </div>
+
+  <div class="algo-head"><h2>Can't Intubate, Can't Oxygenate (CICO)</h2><span class="pill">Airway · APA/DAS Fig 3</span></div>
+  <div class="algo cir">
+    <div class="cols2">
+      <ol>
+        <li><b>Declare CICO.</b> Confirm all mask/LMA steps have failed. Call for the <b>most senior help + ENT/surgeon</b> and the difficult-airway trolley.</li>
+        <li>If a reversible relaxant was used (<b>Rocuronium/Vecuronium</b>) and waking is an option → <b>Sugammadex</b> and wake the child.</li>
+        <li><b>Act when SpO₂ &lt;80% and falling and/or HR dropping.</b> The critical failure is <b>doing nothing</b> — someone must attempt a technique.</li>
+      </ol>
+      <ol start="4">
+        <li><b>Front-of-neck access — choose by age/anatomy:</b><br>
+          <b>Older / larger child →</b> <b>scalpel</b> cricothyroidotomy (adult evidence favours surgical; recruit the surgeon).<br>
+          <b>Infant / small child →</b> the cricothyroid membrane (~2.6 × 3 mm) is smaller than any tube — a <b>surgical tracheostomy</b> or inter-ring approach by ENT is often more appropriate.</li>
+        <li><b>Cannula technique:</b> extend neck, stabilise trachea, insert cannula, confirm air aspiration, oxygenate via a purpose-made device. Beware barotrauma &amp; the flaccid, mobile paediatric trachea.</li>
+        <li><b>Scalpel technique:</b> extend neck → stab through skin + cricothyroid membrane → tracheal hook at lower edge → railroad tube → ventilate, confirm ETCO₂, secure.</li>
+      </ol>
+    </div>
+    <span class="flag">Infant anatomy is the trap — CTM barely exists; locating between tracheal rings is easier.<br>Get ENT if time allows, but never delay the only technique that oxygenates.</span>
+  </div>
+
+</section>
+
+<section class="page sheet">
+  <div class="masthead">
+    <div>
+      <h1>Crisis Algorithms — Circulation</h1>
+      <div class="sub">MEPA / SIMPACT · APLS · RCUK · AAGBI</div>
+    </div>
+    <div class="ctx">Declare the emergency early · assign roles<br><b>Call for help before you need it.</b></div>
+  </div>
+  <div class="algo-head"><h2>Paediatric Cardiac Arrest (APLS / RCUK)</h2><span class="pill">Circulation · RCUK</span></div>
+  <div class="algo cir">
+    <div class="cols2">
+      <ol>
+        <li>Confirm arrest; <b>call resus team</b>; start <b>CPR 15:2</b> (2 rescuers), rate 100–120, depth ⅓ chest.</li>
+        <li>Attach defib/monitor; <b>rhythm check</b> — shockable vs non-shockable.</li>
+        <li><b>Non-shockable</b> (PEA/asystole — the common paediatric arrest): <span class="drug">Adrenaline 10 mcg/kg</span> IV/IO immediately, then every 3–5 min.</li>
+      </ol>
+      <ol start="4" class="[counter-reset:none]">
+        <li><b>Shockable</b> (VF/pVT): <span class="drug">4 J/kg</span> shock; Adrenaline + <span class="drug">Amiodarone 5 mg/kg</span> after 3rd shock (repeat after 5th).</li>
+        <li><b>Airway:</b> ventilate 100% O₂; once advanced airway in, continuous compressions + 25 breaths/min.</li>
+        <li><b>Reversible causes — 4 H &amp; 4 T:</b> Hypoxia, Hypovolaemia, Hypo/hyperkalaemia &amp; metabolic, Hypothermia · Tension pneumothorax, Tamponade, Toxins, Thromboembolism.</li>
+      </ol>
+    </div>
+    <span class="flag">In children, hypoxia & hypovolaemia are the usual precipitants — FIX AIRWAY AND VOLUME FIRST</span>
+  </div>
+
+  <div class="algo-head"><h2>Acute Hypotension</h2><span class="pill">AAGBI QRH · circulation</span></div>
+  <div class="algo cir">
+    <div class="cols2">
+      <ol>
+        <li><b>Confirm it's real:</b> recheck cuff size/position, transducer level/zero, arterial trace. Palpate a central pulse. <b>Give 100% O₂.</b></li>
+        <li><b>Immediate support:</b> IV fluid bolus 10 mL/kg (repeat to 20 mL/kg); titrated vasopressor bolus (Ephedrine or Adrenaline) while finding the cause.</li>
+        <li><b>Reduce obvious causes:</b> lighten if too deep; check <b>high intrathoracic pressure</b> (gas trapping, tension, high PEEP) — disconnect &amp; hand-ventilate to test.</li>
+      </ol>
+      <ol start="4">
+        <li><b>Differential:</b> hypovolaemia / haemorrhage, <b>anaphylaxis</b> (rash, bronchospasm, ↑airway pressure), arrhythmia, <b>LAST</b>, sepsis, embolism (air/PE), cardiac (ischaemia, tamponade), high neuraxial block.</li>
+        <li><b>Surgical causes:</b> caval compression, vagal/peritoneal traction, laparoscopic gas embolism, major blood loss — talk to the surgeon.</li>
+        <li>Treat the cause; escalate; arterial line, invasive monitoring, inotrope/vasopressor infusion if not responding.</li>
+      </ol>
+    </div>
+    <span class="flag">Severe, sudden hypotension with high airway pressure or a rash — treat as anaphylaxis until proven otherwise.</span>
+  </div>
+
+  <div class="algo-head"><h2>SVT</h2><span class="pill">Circulation · RCUK</span></div>
+  <div class="algo cir">
+        <div class="cols2">
+      <ol><li><b>Assess stability:</b> conscious level, perfusion, BP.</li><li><b>Stable:</b> vagal manoeuvres (ice to face in infants; Valsalva).</li><li><span class="drug">Adenosine 100–150 mcg/kg</span> rapid IV + flush; ↑ by 50–100 mcg/kg every 1–2 min.</li></ol>
+      <ol start="4"><li><b>Unstable</b> (shock, ↓consciousness): <b>synchronised DC</b> <span class="drug">1 J/kg</span> → <span class="drug">2 J/kg</span>.</li><li>Seek expert help; treat reversible causes; consider Amiodarone.</li></ol>
+    </div>
+      </div>
+
+  <div class="algo-head"><h2>Anaphylaxis</h2><span class="pill">Circulation · RCUK</span></div>
+  <div class="algo cir">
+    <div class="cols2">
+      <ol>
+        <li><span class="stop">STOP</span> the likely trigger (antibiotic, NMBA, latex, chlorhexidine, colloid).</li>
+        <li><b>Call for help</b>; declare anaphylaxis; <b>100% O₂</b>, secure airway.</li>
+        <li><span class="drug">Adrenaline IM</span> by age band — repeat every 5 min. In theatre with monitoring &amp; access, titrated <span class="drug">IV 1 mcg/kg</span> boluses by an experienced anaesthetist.</li>
+        <li><b>IV fluid bolus</b> <span class="drug">20 mL/kg</span> crystalloid, repeat as needed — vasodilatation is profound.</li>
+      </ol>
+      <ol start="5">
+        <li>Refractory (≥2 IM doses): start <b>Adrenaline infusion</b> <span class="drug">0.05–0.3 mcg/kg/min</span>; consider Vasopressin, Glucagon (if β-blocked).</li>
+        <li><b>Second line</b> (after stabilisation): <span class="drug">Hydrocortisone</span>, <span class="drug">Chlorphenamine</span> by age.</li>
+        <li><b>Investigations:</b> mast-cell tryptase — take at diagnosis, 1–2 h, and 24 h.</li>
+        <li>Document; refer for allergy testing; report the reaction.</li>
+      </ol>
+    </div>
+    <span class="flag">Grade by severity · IM Adrenaline is first-line & lifesaving — Don't delay for IV access.</span>
+  </div>
+
+  <div class="algo-head"><h2>Air / Gas (Venous) Embolism</h2><span class="pill">Circulation</span></div>
+  <div class="algo cir">
+        <div class="cols2">
+      <ol><li><b>Suspect:</b> sudden <b>fall in ETCO₂</b>, desaturation, hypotension, arrhythmia — neurosurgery (sitting), laparoscopy, CVC, open venous surgery.</li><li><b>Stop entrainment:</b> flood field with saline, pack wound, surgeon occludes source; release pneumoperitoneum.</li><li><b>100% O₂</b>, stop N₂O. <b>Call for help.</b></li></ol>
+      <ol start="4"><li><b>Position:</b> head-down + left lateral (Durant) — traps gas in RV apex.</li><li><b>Aspirate</b> from a CVC if in situ. Support circulation: fluids 20 mL/kg, Ephedrine or Adrenaline; CPR if arrest.</li><li>Hyperbaric O₂ if paradoxical / cerebral embolism; watch for pulmonary oedema; ICU.</li></ol>
+    </div>
+        <span class="flag">Sudden ETCO₂ fall + hypotension in a high-risk case = embolism until proven otherwise.</span>
+      </div>
+
+</section>
+
+<section class="page sheet">
+  <div class="masthead">
+    <div>
+      <h1>Crisis Algorithms — Metabolic</h1>
+      <div class="sub">MEPA / SIMPACT · AAGBI · RXH · APLS</div>
+    </div>
+    <div class="ctx">Declare the emergency early · assign roles<br><b>Confirm K⁺ on ABG before treating.</b></div>
+  </div>
+  <div class="algo-head"><h2>Malignant Hyperthermia</h2><span class="pill">Metabolic · AAGBI / RXH</span></div>
+  <div class="algo met">
+    <div class="cols2">
+      <ol>
+        <li><span class="stop">STOP</span> all volatile / Suxamethonium; <b>change circuit / use wall O₂</b>; <b>call for help + declare MH</b>; get the <b>MH kit</b>.</li>
+        <li><b>100% O₂</b> high flow; hyperventilate; convert to <b>TIVA</b>; remove vaporisers.</li>
+        <li><span class="drug">Dantrolene 2.5 mg/kg</span> IV bolus, <b>repeat every 5 min</b> until signs reverse → <span class="drug">up to 30 mg/kg</span>. (20 mg vials, each in 60 mL sterile water — assign a mixer.)</li>
+        <li><b>Active cooling</b> if T&gt;39 °C — cold IV fluids, surface ice, cavity lavage; <b>stop at 38 °C</b>; <u>avoid vasoconstriction</u>.</li>
+      </ol>
+      <ol start="5">
+        <li><b>Hyperkalaemia:</b> <span class="drug">Ca gluconate 0.5 mL/kg</span>, glucose–insulin, NaHCO₃ (see hyperK panel).</li>
+        <li><b>Arrhythmias:</b> Magnesium / Amiodarone. <span class="stop">Do NOT use Ca-channel blockers</span> — hyperkalaemia &amp; arrest with Dantrolene.</li>
+        <li><b>Acidosis:</b> NaHCO₃ 1 mL/kg if gas unavailable, else BE-based. <b>Catheterise</b>, aim urine &gt;0.5 mL/kg/h; if low → Furosemide 1 mg/kg or Mannitol 0.25 g/kg.</li>
+        <li><b>Monitor:</b> core temp, ETCO₂, ABG, K⁺, CK, myoglobin, coagulation. ICU + continue Dantrolene.</li>
+      </ol>
+    </div>
+    <span class="flag">Triad: ↑ETCO₂, Tachycardia, Rigidity / Masseter spasm — with Acidosis, ↑Temp (late), Myoglobinuria</span>
+  </div>
+
+  <div class="algo-head"><h2>Anaesthesia-Induced Rhabdomyolysis (AIR)</h2><span class="pill">Metabolic · RXH</span></div>
+  <div class="algo met">
+    <div class="cols2">
+      <ol>
+        <li><b>Recognise — this is NOT MH:</b> presents with <b>bradycardia, hyperkalaemia, peaked T-waves, cardiac arrest</b> (often in an undiagnosed myopathy after Suxamethonium/volatile). <span class="stop">No Dantrolene.</span></li>
+        <li><span class="stop">STOP</span> all triggers (volatile + Suxamethonium); <b>change machine / use wall O₂</b>; <b>call for help</b>.</li>
+        <li><b>100% O₂ + hyperventilate.</b> <b>ABG — check K⁺.</b></li>
+      </ol>
+      <ol start="4">
+        <li><b>Treat hyperkalaemia</b> once confirmed (see hyperK panel) — this is the priority.</li>
+        <li><b>Catheterise</b>, aim urine <b>&gt;1 mL/kg/h</b>: IV fluid boluses + <span class="drug">Mannitol 0.25 g/kg</span>.</li>
+        <li>If pulseless or HR &lt;60 → <b>start CPR</b>. CPR &gt;20 min → consider <b>bypass / ECMO</b>. Send blood + urine myoglobin, CK.</li>
+      </ol>
+    </div>
+    <span class="flag">Key distinction: AIR = Hyperkalaemic arrest (treat the K⁺); MH = Hypermetabolic (give Dantrolene). Don't confuse them.</span>
+  </div>
+
+  <div class="algo-head"><h2>LA Systemic Toxicity</h2><span class="pill">Neuro · AAGBI</span></div>
+  <div class="algo neu">
+        <div class="cols2">
+      <ol><li><span class="stop">STOP</span> injecting LA; <b>call for help</b>; <b>100% O₂</b>, secure airway.</li><li><b>Control seizures:</b> Benzodiazepine / small Propofol (avoid large Propofol if unstable).</li><li><span class="drug">Intralipid 20% 1.5 mL/kg</span> bolus over 1 min, then infusion <span class="drug">15 mL/kg/h</span>.</li></ol>
+      <ol start="4"><li>Repeat bolus ×2 every 5 min if unstable; double infusion rate. Max ≈ 12 mL/kg.</li><li><b>If arrest:</b> prolonged CPR (&gt;1 h); small Adrenaline doses (&lt;1 mcg/kg); avoid Vasopressin, Ca-blockers, LA.</li></ol>
+    </div>
+      </div>
+
+  <div class="algo-head"><h2>Hyperkalaemia Management</h2><span class="pill">Metabolic · RXH / APLS</span></div>
+  <div class="algo met">
+    <div class="cols2">
+      <ol>
+        <li><b>Confirm on ABG</b> (exclude haemolysis/spurious); continuous <b>ECG</b> — watch peaked T-waves, wide QRS.</li>
+        <li><b>Stabilise the membrane:</b> <span class="drug">Ca gluconate 10% 0.5 mL/kg</span> IV bolus (max 20 mL) — or <span class="drug">CaCl₂ 10% 0.1–0.2 mL/kg</span>. Repeat if ECG changes persist.</li>
+        <li><b>Shift K⁺ intracellularly:</b> <span class="drug">Salbutamol</span> neb / IV; <span class="drug">NaHCO₃ 8.4% 1–2 mL/kg</span> (or BE-based).</li>
+        <li><b>Hyperventilate</b> (once ETT-in-right-main-bronchus excluded).</li>
+      </ol>
+      <ol start="5">
+        <li><b>Insulin–Dextrose</b> if not resolving (senior input):<br>
+          <b>Emergency:</b> <span class="drug">50% Dextrose 1 mL/kg</span> + <span class="drug">Insulin 0.1 U/kg</span>.<br>
+          <b>Gradual:</b> 25% Dextrose 2 mL/kg/h until glucose &gt;10 → Actrapid 0.05 U/kg/h.</li>
+        <li><span class="drug">Salbutamol</span> infusion: 5 mcg/kg/min ×1 h, then 1 mcg/kg/min.</li>
+        <li><b>Diuresis:</b> <span class="drug">Furosemide 1 mg/kg</span>. <b>Monitor glucose &amp; K⁺ regularly</b>; aim glucose 10–15 mmol/L.</li>
+      </ol>
+    </div>
+    <span class="flag">Calcium protects the myocardium but does NOT lower K⁺ — always follow with a shifting agent.</span>
+  </div>
+
+</section>
+
+<section class="page sheet">
+  <div class="masthead">
+    <div>
+      <h1>Systems &amp; Equipment Failure</h1>
+      <div class="sub">MEPA / SIMPACT · AAGBI Quick Reference Handbook</div>
+    </div>
+    <div class="ctx"><b>Disconnect &amp; hand-ventilate</b> turns a machine problem into a simple airway check<br><b>Maintain oxygenation &amp; anaesthesia before fault-finding.</b></div>
+  </div>
+  <div class="algo-head"><h2>DOPES — Sudden Deterioration in an Intubated Child</h2><span class="pill">AAGBI QRH · systematic</span></div>
+  <div class="algo neu">
+    <div class="cols2">
+      <ol>
+        <li><b>Switch to 100% O₂; hand-ventilate</b> off the machine with a self-inflating bag — removes ventilator/circuit as the cause and lets you feel compliance.</li>
+        <li><b>D — Displacement:</b> ETT too deep (endobronchial → unilateral chest rise), too shallow, or oesophageal. Check depth at lips, capnograph, auscultate; ultrasound / re-laryngoscopy if unsure.</li>
+        <li><b>O — Obstruction:</b> kink, secretions, mucus plug, blood, biting. Pass a suction catheter; if it won't pass, tube is blocked — remove &amp; re-oxygenate.</li>
+      </ol>
+      <ol start="4">
+        <li><b>P — Pneumothorax:</b> ↑airway pressure, ↓unilateral air entry, ↓SpO₂, hypotension. Tension → needle decompression / finger thoracostomy, then drain.</li>
+        <li><b>E — Equipment:</b> once bagging, work through circuit, valves, O₂ source, connectors, capnography line, ventilator settings. User error (wrong bag/mask size, wrong rate) is common in small children.</li>
+        <li><b>S — Stacking &amp; Stomach:</b> <b>Stacking</b> (breath-stacking / gas trapping, esp. bronchospasm) → disconnect, allow long expiration. <b>Stomach</b> — gastric distension splints the diaphragm; decompress with NG/OG tube.</li>
+      </ol>
+    </div>
+    <span class="flag">Disconnect and hand-ventilate first — if in doubt, take the machine out of the circuit.</span>
+  </div>
+
+  <div class="algo-head"><h2>Acute Desaturation + Loss of ETCO₂</h2><span class="pill">AAGBI QRH · airway / circ</span></div>
+  <div class="algo cir">
+    <div class="cols2">
+      <ol>
+        <li><b>Loss of ETCO₂ has two lethal causes — decide fast:</b> (1) no circulation → <b>cardiac arrest</b>, or (2) no ventilation reaching the lungs → <b>airway/circuit</b>. <b>Check a pulse now.</b></li>
+        <li><b>No pulse → cardiac arrest algorithm</b> (CPR, Adrenaline 10 mcg/kg).</li>
+        <li><b>Pulse present → 100% O₂, hand-ventilate, run DOPES:</b> displaced/obstructed ETT, disconnection, oesophageal, circuit obstruction.</li>
+      </ol>
+      <ol start="4">
+        <li><b>Confirm the airway:</b> flat capnograph with an ETT = displacement, disconnection, or oesophageal → direct/video laryngoscopy to confirm cords.</li>
+        <li><b>Also consider:</b> severe bronchospasm, massive PE / air / fat embolism, low cardiac output — a sudden <i>fall</i> (not loss) of ETCO₂ with hypotension suggests embolism / falling output.</li>
+        <li>Escalate; treat the cause; returning ETCO₂ is the marker of success.</li>
+      </ol>
+    </div>
+    <span class="flag">A flat capnograph is either "no output" or "no ventilation" — a pulse check separates arrest from an airway problem. Waveform capnography is the key monitor (NAP4).</span>
+  </div>
+
+  <div class="algo-head"><h2>High Airway Pressure</h2><span class="pill">AAGBI QRH</span></div>
+  <div class="algo neu">
+    <div class="cols2">
+      <ol>
+        <li><b>100% O₂; hand-ventilate</b> with a self-inflating bag to feel compliance and separate <b>circuit/equipment</b> from <b>patient</b> causes.</li>
+        <li><b>Equipment/circuit</b> (relieved by disconnecting): obstructed / kinked ETT or circuit, stuck APL valve or ventilator, wrong settings, filter blockage. Easy to bag off the machine → fault is the machine/circuit.</li>
+        <li><b>Patient — airway:</b> run <b>DOPES</b> — displaced (endobronchial) or obstructed ETT (secretions, plug, biting), <b>breath-stacking</b> / gas trapping.</li>
+      </ol>
+      <ol start="4">
+        <li><b>Patient — lungs / chest:</b> bronchospasm, <b>tension pneumothorax</b> (↓unilateral air entry, hypotension → decompress), pulmonary oedema, aspiration, light anaesthesia / straining.</li>
+        <li><b>Surgical:</b> retraction, pneumoperitoneum, position, surgeon leaning on the chest — communicate with the surgeon.</li>
+        <li>Deepen ± relaxant if straining; treat the cause; recheck compliance.</li>
+      </ol>
+    </div>
+    <span class="flag">Hand-ventilating is the fastest test — normal compliance off the machine means the fault is the circuit/ventilator, not the patient.</span>
+  </div>
+
+  <div class="algo-head"><h2>Machine / Ventilator Failure</h2><span class="pill">AAGBI QRH</span></div>
+  <div class="algo neu">
+        <div class="cols2">
+      <ol><li><b>Call for help</b>; declare it. <b>Maintain anaesthesia &amp; oxygenation</b> before fault-finding.</li><li><b>Self-inflating bag + alternative O₂</b> (machine or separate cylinder). Hand-ventilate.</li><li><b>Convert to TIVA</b> (Propofol ± remi / Ketamine) — a stopped vaporiser risks awareness.</li></ol>
+      <ol start="4"><li><b>Isolate fault:</b> whole machine vs vaporiser / gas / ventilator / monitoring.</li><li><b>Replacement machine</b>; keep bag until two-bag check done. Full monitoring — SpO₂ + capnography.</li><li>Document; report; remove faulty machine from service.</li></ol>
+    </div>
+        <span class="flag">Self-inflating bag + O₂ cylinder keeps the patient alive independent of the machine. Start TIVA early.</span>
+      </div>
+
+  <div class="algo-head"><h2>O₂ Supply / Pipeline Failure</h2><span class="pill">AAGBI QRH</span></div>
+  <div class="algo neu">
+        <div class="cols2">
+      <ol><li><b>Declare; call for help.</b> Suspect if O₂ analyser / pipeline gauge falls or low-O₂ alarm sounds.</li><li><b>Open the O₂ cylinder</b> on the machine — fastest independent supply.</li><li><b>Disconnect the O₂ pipeline from the wall</b> — a crossed pipeline can deliver a hypoxic mix; cylinder is only safe once wall supply is off.</li></ol>
+      <ol start="4"><li><b>Self-inflating bag</b> if machine flow unreliable. <b>Minimise flows</b> to conserve cylinder O₂.</li><li><b>Maintain anaesthesia</b> — TIVA if fresh gas / vaporiser compromised.</li><li>Backup cylinders early; alert coordinator &amp; estates; plan wake vs finish on reserve.</li></ol>
+    </div>
+        <span class="flag">Disconnect the wall pipeline — a rising cylinder does not fix a crossed pipeline still feeding hypoxic gas.</span>
+      </div>
+
+</section>
+
+<section class="page sheet">
+  <div class="masthead">
+    <div>
+      <h1>Blood Products &amp; Massive Transfusion</h1>
+      <div class="sub">MEPA / SIMPACT · RXH protocols</div>
+    </div>
+    <div class="ctx">Emergency haemorrhage reference<br><b>Warm blood · monitor K⁺ &amp; Ca²⁺.</b></div>
+  </div>
+  <div class="algo-head"><h2>Blood Products / Bleeding</h2><span class="pill">Haemorrhage · RXH</span></div>
+  <div class="algo cir">
+    <div class="cols2 dpanel">
+      <dl>
+        <dt>Packed red cells</dt><dd>(Desired−Actual Hb) × wt × 4 mL <br><small>(30 mL/kg in MTP)</small></dd>
+        <dt>Tranexamic acid</dt><dd><span class="drug">5–10 mg/kg</span> over 20 min + 10 mg/kg/h infusion</dd>
+        <dt>Platelets</dt><dd>10 mL/kg/dose</dd>
+        <dt>FFP</dt><dd>15 mL/kg/dose</dd>
+      </dl>
+      <dl>
+        <dt>Cryoprecipitate</dt><dd>1 bag per 5 kg &nbsp;<small>(individual, NOT pooled bags)</small></dd>
+        <dt>Albumin</dt><dd>4% solution, 5 mL/kg boluses</dd>
+        <dt>PRBC unit size</dt><dd>Paed 130±25 mL · Neonate 55±20 mL<br>Adult 300±100 mL</dd>
+        <dt>Platelet unit</dt><dd>Infant apheresis 50±10 mL<br>Paed single-donor 150±50 mL</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="algo-head"><h2>Massive Transfusion Protocol (MTP)</h2><span class="pill">Haemorrhage · RXH</span></div>
+  <div class="algo cir">
+    <div class="cols2">
+      <div>
+        <p style="margin:0 0 4px;font-weight:700;color:var(--circ);">Activate &amp; run</p>
+        <ol>
+          <li><b>Alert switchboard</b> — location, name, hospital number, weight.</li>
+          <li><b>Send:</b> crossmatch (3 mL);<br>Repeat ABG half-hourly (monitor <b>K⁺ &amp; Ca²⁺</b>).</li>
+          <li><b>Blood warmer</b> on. Give <span class="drug">Tranexamic acid 10 mg/kg</span> IV.</li>
+        </ol>
+        <p style="margin:6px 0 4px;font-weight:700;">Packs</p>
+        <div class="dpanel"><dl>
+          <dt>MTP pack 1</dt><dd>PRBC 30 mL/kg + FFP 15 mL/kg</dd>
+          <dt>MTP pack 2*</dt><dd>Cryo 4 units/kg + Platelets 10 mL/kg</dd>
+        </dl></div>
+        <p style="margin:3px 0 0;font-size:8.6px;color:var(--muted);">*if ongoing bleeding</p>
+      </div>
+      <div>
+        <p style="margin:0 0 4px;font-weight:700;color:var(--circ);">Indications for MTP</p>
+        <ul class="plain" style="padding-left:15px;margin-top:0;">
+          <li>Rapid loss with shock or no likelihood of control</li>
+          <li>Actual loss &gt;40 mL/kg</li>
+          <li>Ongoing loss ≥20 mL/kg/h</li>
+          <li>Severe head, thoracic, abdominal, pelvic or long-bone trauma</li>
+        </ul>
+        <span class="flag" style="margin-top:8px;">Monitor ionised Ca²⁺ &amp; K⁺ throughout — citrate load causes hypocalcaemia; stored blood is hyperkalaemic.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>MEPA / SIMPACT · full crisis reference</span>
+    <span>APA · DAS · AAGBI · RCUK · RXH · AAGBI QRH · Verify against SAMF &amp; local formulary</span>
+  </div>
+</section>
+
+</body>
+</html>
