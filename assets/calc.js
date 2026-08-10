@@ -48,6 +48,20 @@ function fmtNum(n){
 function calcDose(d){
   const w = estimateWeight();
   if(!w) return {ok:false, text:d.label||'enter weight'};
+  // range dose: d.hi present → compute low–high
+  if(d.hi!=null){
+    let lo = d.perKg * w.kg, hi = d.hi * w.kg;
+    let cappedLo=false, cappedHi=false;
+    if(d.max!=null && lo>d.max){ lo=d.max; cappedLo=true; }
+    if(d.max!=null && hi>d.max){ hi=d.max; cappedHi=true; }
+    const rng = `${fmtNum(lo)}–${fmtNum(hi)}`;
+    const workBase = `${d.perKg}–${d.hi} ${d.unit}/kg × ${w.kg} kg`;
+    return {
+      ok:true,
+      result:`${d.prefix||''}${rng} ${d.unit}${d.suffix||''}`,
+      working:(cappedLo||cappedHi) ? `${workBase} · max ${d.max} ${d.unit}` : workBase
+    };
+  }
   let val = d.perKg * w.kg;
   let capped=false;
   if(d.max!=null && val>d.max){ val=d.max; capped=true; }

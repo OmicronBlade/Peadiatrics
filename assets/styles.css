@@ -6,6 +6,7 @@
     --metab:#7c2d12; --metab-bg:#fbeee4;
     --neuro:#6b21a8; --neuro-bg:#f4eafb;
     --accent:#0f766e; --accent-bg:#e5f4f2;
+    --last:#c2410c; --last-bg:#fdefe6;
     --warn:#92400e; --warn-bg:#fff4e0;
     --live:#0f766e; --live-bg:#e9f6f4;
   }
@@ -77,6 +78,8 @@
   .ebtn.active.cir{background:var(--circ);}   .ebtn.cir .dot{background:var(--circ);}
   .ebtn.active.met{background:var(--metab);}  .ebtn.met .dot{background:var(--metab);}
   .ebtn.active.neu{background:var(--neuro);}  .ebtn.neu .dot{background:var(--neuro);}
+  .ebtn.active.acc{background:var(--accent);} .ebtn.acc .dot{background:var(--accent);}
+  .ebtn.active.last{background:var(--last);}  .ebtn.last .dot{background:var(--last);}
   .ebtn.active .dot{background:#fff;}
 
   /* ---------- main content ---------- */
@@ -95,6 +98,8 @@
   .panel.cir .panel-head{border-left-color:var(--circ);}
   .panel.met .panel-head{border-left-color:var(--metab);}
   .panel.neu .panel-head{border-left-color:var(--neuro);}
+  .panel.acc .panel-head{border-left-color:var(--accent);}
+  .panel.last .panel-head{border-left-color:var(--last);}
   .panel-head h2{margin:0;font-size:16.5px;font-weight:800;flex:1;letter-spacing:.2px;}
   .panel-head .pill{font-size:10px;background:#eef1f5;color:var(--muted);padding:3px 9px;
     border-radius:20px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;white-space:nowrap;}
@@ -114,6 +119,8 @@
   .panel.cir ol.steps>li::before{background:var(--circ);}
   .panel.met ol.steps>li::before{background:var(--metab);}
   .panel.neu ol.steps>li::before{background:var(--neuro);}
+  .panel.acc ol.steps>li::before{background:var(--accent);}
+  .panel.last ol.steps>li::before{background:var(--last);}
   .stop{color:var(--circ);font-weight:800;}
   .sub{color:var(--muted);font-size:13.5px;}
 
@@ -178,6 +185,7 @@
   .classdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
   .cd-air{background:var(--airway);}.cd-cir{background:var(--circ);}
   .cd-met{background:var(--metab);}.cd-neu{background:var(--neuro);}
+  .cd-acc{background:var(--accent);}.cd-last{background:var(--last);}
 
   .footer{max-width:1180px;margin:0 auto;padding:14px 16px 34px;color:var(--muted);font-size:12px;
     display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;}
