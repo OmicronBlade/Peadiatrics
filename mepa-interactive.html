@@ -67,21 +67,21 @@
    ============================================================ */
 const DRUGS = [
   {c:'cir', name:'Adrenaline — arrest', note:'IV/IO, q3–5 min', perKg:10, unit:'mcg', rxh:'same (q4min)', same:true},
-  {c:'cir', name:'Adrenaline — anaphylaxis', note:'IM 1:1000, repeat 5 min', special:'IM by age band', rxh:'IV 1 mcg/kg + IM 10 mcg/kg'},
+  {c:'cir', name:'Adrenaline — anaphylaxis', note:'IM 1:1000 anterolateral thigh, repeat 5 min', anaphAdren:true, rxh:'IV 1 mcg/kg + IM 10 mcg/kg (max 500mcg)'},
   {c:'air', name:'Atropine', note:'IV/IO · max 4 mg', perKg:20, unit:'mcg', max:4000, rxh:'0.02 mg/kg', same:true},
   {c:'air', name:'Suxamethonium', note:'IV (IM 4 mg/kg if no access)', perKg:1.5, unit:'mg', rxh:'—', same:true},
   {c:'air', name:'Rocuronium', note:'RSI, IV', perKg:1.2, unit:'mg', rxh:'—', same:true},
-  {c:'neu', name:'Propofol', note:'induction / deepen, IV', perKg:2.5, unit:'mg', rxh:'—', same:true},
+  {c:'neu', name:'Propofol', note:'induction / deepen, IV', perKg:0.5, hi:2.5, unit:'mg', rxh:'—', same:true},
   {c:'met', name:'Dantrolene — MH', note:'IV, repeat q5min → 30 mg/kg', perKg:2.5, unit:'mg', rxh:'2.5 mg/kg q5min', same:true},
-  {c:'neu', name:'Intralipid 20% — LAST', note:'bolus, then infusion', perKg:1.5, unit:'mL', rxh:'—', same:true},
+  {c:'last', name:'Intralipid 20% — LAST', note:'bolus, then infusion', perKg:1.5, unit:'mL', rxh:'—', same:true},
   {c:'air', name:'Salbutamol — IV', note:'slow bolus', perKg:15, unit:'mcg', rxh:'neb <5yr 2.5mg / >5yr 5mg'},
   {c:'cir', name:'Amiodarone', note:'shockable arrest / arrhythmia', perKg:5, unit:'mg', max:300, rxh:'in 5% dex over 30 min (arrhythmia)'},
-  {c:'cir', name:'Adenosine — SVT 1st', note:'rapid push + flush', perKg:100, unit:'mcg', max:6000, rxh:'100/200/300 mcg/kg, max 12mg'},
-  {c:'cir', name:'Fluid bolus', note:'crystalloid, titrate', perKg:10, unit:'mL', rxh:'5 mL/kg → 20 mL/kg max', prefix:'', suffix:'–'+'', special2:true},
+  {c:'cir', name:'Adenosine — SVT', note:'rapid push + saline flush; escalate q1–2 min', adenosine:true, rxh:'100/200/300 mcg/kg (neonate 300mcg/kg); max 12mg'},
+  {c:'cir', name:'Fluid bolus', note:'crystalloid, titrate', perKg:10, unit:'mL', rxh:'5 mL/kg → 20 mL/kg max'},
   {c:'met', name:'Dextrose 10%', note:'hypoglycaemia, IV/IO', perKg:2, unit:'mL', rxh:'2 mL/kg', same:true},
   {c:'met', name:'Calcium chloride 10%', note:'IV slow · max 10 mL', perKg:0.15, unit:'mL', max:10, rxh:'0.1–0.2 mL/kg', same:true},
   {c:'met', name:'Calcium gluconate 10%', note:'IV slow · max 20 mL', perKg:0.5, unit:'mL', max:20, rxh:'0.3–0.5 mL/kg', same:true},
-  {c:'cir', name:'Lignocaine', note:'IV', perKg:1, unit:'mg', rxh:'1 mg/kg', same:true},
+  {c:'cir', name:'Lignocaine — arrest (VT/VF)', note:'IV/IO · alternative to amiodarone', perKg:1, hi:1.5, unit:'mg', rxh:'1 mg/kg', same:true},
   {c:'neu', name:'Magnesium sulphate', note:'IVI over 10–20 min', perKg:40, unit:'mg', max:2000, rxh:'25–50 mg/kg', same:true},
   {c:'neu', name:'Hydrocortisone', note:'anaphylaxis', perKg:3, unit:'mg', rxh:'2–4 mg/kg (RXH weight-based)'},
   {c:'neu', name:'Naloxone', note:'post-op sedation · repeat q2min', perKg:2, unit:'mcg', rxh:'2 mcg/kg', same:true},
@@ -93,16 +93,35 @@ function renderDrugTable(){
   const w = estimateWeight();
   let rows = DRUGS.map(d=>{
     let liveCell;
-    if(d.special){ liveCell = `<td class="live noval">${d.special}</td>`; }
+    if(d.adenosine){
+      if(!w){ liveCell = `<td class="live noval">—</td>`; }
+      else {
+        const mg = (perKg,max)=>{ let v=perKg*w.kg; if(v>max)v=max; return fmtNum(v/1000)+' mg'; };
+        const d1=mg(100,6000), d2=mg(200,12000), d3=mg(300,12000);
+        liveCell = `<td class="live">1st ${d1} · 2nd ${d2} · 3rd ${d3}<span class="w">100/200/300 mcg/kg × ${w.kg} kg (max 6/12/12 mg)</span></td>`;
+      }
+    }
+    else if(d.anaphAdren){
+      const ay = S.ageYears;
+      if(ay==null){ liveCell = `<td class="live noval">enter age</td>`; }
+      else {
+        let band = ay<6 ? '&lt;6 yr → 150 mcg' : (ay<=12 ? '6–12 yr → 300 mcg' : '&gt;12 yr → 500 mcg');
+        liveCell = `<td class="live">${band}<span class="w">IM 1:1000 · by age band (age ${fmtNum(ay)} yr)</span></td>`;
+      }
+    }
+    else if(d.special){ liveCell = `<td class="live noval">${d.special}</td>`; }
     else if(!w){ liveCell = `<td class="live noval">—</td>`; }
     else {
       const c = calcDose(d);
       liveCell = `<td class="live">${c.result}<span class="w">${c.working}</span></td>`;
     }
+    const guideCell = d.adenosine ? '100 / 200 / 300 mcg/kg<br><small style="color:var(--muted)">max 6 / 12 / 12 mg</small>'
+      : d.anaphAdren ? 'IM (1:1000): &lt;6yr 150mcg · 6–12yr 300mcg · &gt;12yr 500mcg'
+      : (d.special?d.special:(d.hi!=null?d.perKg+'–'+d.hi:d.perKg)+' '+d.unit+'/kg'+(d.max?'<br><small style="color:var(--muted)">max '+d.max+' '+d.unit+'</small>':''));
     const rxhCls = d.same ? 'rxh same' : 'rxh';
     return `<tr>
       <th><span class="classdot cd-${d.c}"></span>${d.name}<small>${d.note}</small></th>
-      <td>${d.special?d.special:d.perKg+' '+d.unit+'/kg'}${d.max?'<br><small style="color:var(--muted)">max '+d.max+' '+d.unit+'</small>':''}</td>
+      <td>${guideCell}</td>
       <td class="${rxhCls}">${d.rxh||'—'}</td>
       ${liveCell}
     </tr>`;
@@ -123,7 +142,7 @@ function ALGOS(){ return [
   `<b>Call for help</b>; remove the stimulus (secretions, airway, surgery).`,
   `<b>100% O₂</b> + <b>CPAP</b> via tight-fitting mask, close APL valve.`,
   `<b>Larson's manoeuvre</b> — firm pressure at the laryngospasm notch behind ear lobes, jaw thrust.`,
-  `<b>Deepen</b> anaesthesia: Propofol ${D(2.5,'mg')} IV.`,
+  `<b>Deepen</b> anaesthesia: Propofol ${D(0.5,'mg',{hi:1})} IV (0.5–1 mg/kg, repeated as necessary).`,
   `If unbroken / desaturating: Suxamethonium ${D(1.5,'mg')} IV (IM 4 mg/kg if no access) + Atropine ${D(20,'mcg',{max:4000})}.`,
   `Ventilate, intubate if needed; watch for <b>negative-pressure pulmonary oedema</b>.`
  ],
@@ -135,6 +154,7 @@ function ALGOS(){ return [
   `Salbutamol — MDI via circuit or neb 2.5–5 mg; IV ${D(15,'mcg')} slow.`,
   `Severe / silent chest: Adrenaline ${D(1,'mcg')} IV titrated, or IM.`,
   `Add Magnesium ${D(40,'mg',{max:2000})} IV, Hydrocortisone ${D(3,'mg')}, Ipratropium.`,
+  `<b>Bronchospastic mix (RXH):</b> Lignocaine 2% 1 mL + Adrenaline 50 mcg (0.5 mL of 1:10 000) + N.Saline 0.5 mL. Give <b>&lt;1 yr = 1 mL</b>, <b>&gt;1 yr = 2 mL</b> down the ETT.`,
   `Hand-ventilate — feel compliance; allow long expiratory time (avoid gas trapping).`
  ]},
 {id:'foreignbody', group:'Airway / respiratory', c:'air', title:'Inhaled Foreign Body / Rigid Bronchoscopy', pill:'Airway · shared airway',
@@ -185,7 +205,7 @@ function ALGOS(){ return [
   `LMA fails to ventilate → <b>CICO pathway</b>. <span class="sub">Ventilating but not intubated: wake or proceed on the LMA.</span>`
  ],
  flag:`Repeated laryngoscopy causes oedema that converts a difficult airway into a CICO — change approach, don't just retry.`},
-{id:'cico', group:'Difficult airway pathways', c:'cir', title:"Can't Intubate, Can't Oxygenate (CICO)", pill:'APA/DAS Fig 3',
+{id:'cico', group:'Difficult airway pathways', c:'air', title:"Can't Intubate, Can't Oxygenate (CICO)", pill:'APA/DAS Fig 3',
  steps:[
   `<b>Declare CICO.</b> Confirm all mask/LMA steps failed. Call for <b>most senior help + ENT/surgeon</b> and the difficult-airway trolley.`,
   `If a reversible relaxant was used (Rocuronium/Vecuronium) and waking is an option → <b>Sugammadex</b> and wake the child.`,
@@ -202,7 +222,7 @@ function ALGOS(){ return [
   `Confirm arrest; <b>call resus team</b>; start <b>CPR 15:2</b> (2 rescuers), rate 100–120, depth ⅓ chest.`,
   `Attach defib/monitor; <b>rhythm check</b> — shockable vs non-shockable.`,
   `<b>Non-shockable</b> (PEA/asystole — the common paediatric arrest): Adrenaline ${D(10,'mcg')} IV/IO immediately, then every 3–5 min.`,
-  `<b>Shockable</b> (VF/pVT): DC shock ${D(4,'J',{label:'4 J/kg'})}; Adrenaline ${D(10,'mcg')} + Amiodarone ${D(5,'mg',{max:300})} after 3rd shock (repeat after 5th).`,
+  `<b>Shockable</b> (VF/pVT): DC shock ${D(4,'J',{label:'4 J/kg'})}; Adrenaline ${D(10,'mcg')} + Amiodarone ${D(5,'mg',{max:300})} after 3rd shock (repeat after 5th). <b>Lignocaine ${D(1,'mg',{hi:1.5})} (1–1.5 mg/kg) is an alternative to amiodarone.</b>`,
   `<b>Airway:</b> ventilate 100% O₂; once advanced airway in, continuous compressions + 25 breaths/min.`,
   `<b>Reversible causes — 4 H &amp; 4 T:</b> Hypoxia, Hypovolaemia, Hypo/hyperkalaemia &amp; metabolic, Hypothermia · Tension pneumothorax, Tamponade, Toxins, Thromboembolism.`
  ],
@@ -275,7 +295,7 @@ function ALGOS(){ return [
   `If pulseless or HR &lt;60 → <b>start CPR</b>. CPR &gt;20 min → consider <b>bypass / ECMO</b>. Send blood + urine myoglobin, CK.`
  ],
  flag:`Key distinction: AIR = hyperkalaemic arrest (treat the K⁺); MH = hypermetabolic (give Dantrolene). Don't confuse them.`},
-{id:'last', group:'Metabolic', c:'neu', title:'Local Anaesthetic Systemic Toxicity (LAST)', pill:'Neuro · AAGBI',
+{id:'last', group:'Metabolic', c:'last', title:'Local Anaesthetic Systemic Toxicity (LAST)', pill:'AAGBI',
  steps:[
   `<span class="stop">STOP</span> injecting LA; <b>call for help</b>; <b>100% O₂</b>, secure airway.`,
   `<b>Control seizures:</b> Benzodiazepine / small Propofol (avoid large Propofol if unstable).`,
@@ -399,9 +419,9 @@ function ALGOS(){ return [
 /* ---------------- REFERENCE ---------------- */
 
 /* ---------------- REFERENCE ---------------- */
-{id:'drugs', group:'Reference', c:'met', title:'All Emergency Drugs (live table)', pill:'Reference',
+{id:'drugs', group:'Reference', c:'acc', title:'All Emergency Drugs (live table)', pill:'Reference',
  type:'custom', html:()=>renderDrugTable()},
-{id:'ett', group:'Reference', c:'air', title:'ETT · Vitals · Cardioversion', pill:'Reference',
+{id:'ett', group:'Reference', c:'acc', title:'ETT · Vitals · Cardioversion', pill:'Reference',
  type:'custom', html:()=>{
    const s=ettSize(), l=ettLength();
    return `<div class="refgrid">
