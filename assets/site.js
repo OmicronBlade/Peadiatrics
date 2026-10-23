@@ -12,7 +12,8 @@
    the nav on every page automatically. `id` matches each page's
    <body data-page="..."> so the current tab auto-highlights.   */
 const NAV_PAGES = [
-  { id:'interactive', label:'Interactive tool',  href:'mepa-interactive.html' },
+  { id:'interactive', label:'MEPA/SimPACT',      href:'mepa-interactive.html' },
+  { id:'emergency',   label:'Paediatric Emergency', href:'mepa-paediatric-emergency.html' },
   { id:'card',        label:'Emergency card',    href:'mepa-emergency-card.html' },
   { id:'drugs',       label:'Drug reference',    href:'mepa-drug-reference.html' },
   // → add future pages here, e.g.
@@ -63,6 +64,7 @@ const NAP4_HTML = `<div class="info">
        groupOrder: [...],            // optional custom selector order
        ntsGroups: [...],             // groups that get the NTS block
        nap4Groups: [...],            // groups that get the NAP4 block
+       ntsMode: 'panel' | 'dropdown',// NTS inside every panel (default) or one drop-down reference
        autoOpenFirst: false          // open first item on load?
      })
    ============================================================ */
@@ -97,16 +99,41 @@ const MEPA = (function(){
     const list=document.getElementById('selectorList');
     if(!list) return;
     list.innerHTML=html;
+    buildSelectorToggle(list);
     list.querySelectorAll('.ebtn').forEach(b=>{
       b.addEventListener('click',()=>togglePanel(b.dataset.id));
     });
   }
 
+  /* phone/tablet: the selector collapses behind a toggle once something is open */
+  const narrow = window.matchMedia('(max-width:820px)');
+  function buildSelectorToggle(list){
+    const aside=list.closest('.selector');
+    if(!aside || aside.querySelector('.sel-toggle')) return;
+    const btn=document.createElement('button');
+    btn.type='button'; btn.className='sel-toggle';
+    btn.setAttribute('aria-expanded','true');
+    btn.addEventListener('click',()=>setSelectorCollapsed(aside.classList.contains('collapsed')?false:true));
+    aside.insertBefore(btn,list);
+    updateSelectorToggle();
+  }
+  function setSelectorCollapsed(c){
+    const aside=document.querySelector('.selector'); if(!aside) return;
+    aside.classList.toggle('collapsed',c);
+    updateSelectorToggle();
+  }
+  function updateSelectorToggle(){
+    const aside=document.querySelector('.selector');
+    const btn=aside&&aside.querySelector('.sel-toggle'); if(!btn) return;
+    const c=aside.classList.contains('collapsed');
+    btn.setAttribute('aria-expanded',String(!c));
+    btn.innerHTML=`<span>${c?'Show list':'Hide list'}</span><span class="sel-count">${openPanels.size} open</span>`;
+  }
   function panelHTML(a){
     let inner='';
     const ntsGroups  = cfg.ntsGroups  || DEFAULT_GROUP_ORDER.filter(g=>g!=='Reference');
     const nap4Groups = cfg.nap4Groups || ['Difficult airway pathways'];
-    if(ntsGroups.includes(a.group)) inner+=NTS_HTML;
+    if(cfg.ntsMode!=='dropdown' && ntsGroups.includes(a.group)) inner+=NTS_HTML;
     if(a.showNap4 || nap4Groups.includes(a.group)) inner+=NAP4_HTML;
     if(a.type==='custom'){ inner+=a.html(); }
     else {
@@ -131,7 +158,7 @@ const MEPA = (function(){
       content.innerHTML=`<div class="empty">
         <h3>${cfg.emptyTitle||'Pick an item to begin'}</h3>
         <p>${cfg.emptyBody||'Choose from the list on the left. It opens here with every dose calculated for the current patient.'}</p>
-        <p class="sub">Non-technical skills show with every emergency; NAP4 lessons show with the airway pathways.</p>
+        ${(cfg.ntsGroups&&!cfg.ntsGroups.length&&cfg.nap4Groups&&!cfg.nap4Groups.length)?'':`<p class="sub">${cfg.ntsMode==='dropdown'?'Non-technical skills are in the drop-down reference above; NAP4 lessons show with the airway pathways.':'Non-technical skills show with every emergency; NAP4 lessons show with the airway pathways.'}</p>`}
       </div>`;
     } else {
       const orderIds = algos.map(a=>a.id).filter(id=>openPanels.has(id));
@@ -143,10 +170,12 @@ const MEPA = (function(){
     document.querySelectorAll('.ebtn').forEach(b=>{
       b.classList.toggle('active', openPanels.has(b.dataset.id));
     });
+    updateSelectorToggle();
   }
 
   function togglePanel(id){
     if(openPanels.has(id)) openPanels.delete(id); else openPanels.add(id);
+    if(narrow.matches && openPanels.has(id)) setSelectorCollapsed(true);
     render();
     if(openPanels.has(id)){
       setTimeout(()=>{
@@ -207,7 +236,19 @@ const MEPA = (function(){
   function init(config){
     cfg = config;
     renderNavbar();
+    if(cfg.ntsMode==='dropdown'){
+      const wrap=document.querySelector('.wrap');
+      if(wrap){
+        const d=document.createElement('details');
+        d.className='ntsref';
+        d.innerHTML=`<summary>Non-technical skills — reference</summary>${NTS_HTML}`;
+        wrap.parentNode.insertBefore(d,wrap);
+      }
+    }
     wirePatientBar();
+    const syncPb=()=>{ const pb=document.querySelector('.patientbar');
+      if(pb) document.documentElement.style.setProperty('--pbh',(pb.offsetHeight+8)+'px'); };
+    syncPb(); window.addEventListener('resize',syncPb); window.addEventListener('load',syncPb);
     buildSelector();
     updateWeightDisplay();
     if(cfg.autoOpenFirst){

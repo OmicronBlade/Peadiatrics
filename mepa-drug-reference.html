@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MEPA / SIMPACT — Drug Reference</title>
+<title>MEPA/SimPACT — Drug Reference</title>
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body data-page="drugs">
@@ -13,7 +13,7 @@
 <div class="patientbar">
   <div class="pb-inner">
     <div class="pb-title">
-      <h1>Paediatric Anaesthesia Drug Reference</h1>
+      <h1>Drug Reference</h1>
       <div class="tag">MEPA / SIMPACT · every dose live for the entered weight</div>
     </div>
     <div class="field">
@@ -88,26 +88,26 @@ function renderDrugTable(){
   let rows = DRUGS.map(d=>{
     let liveCell;
     if(d.adenosine){
-      if(!w){ liveCell = `<td class="live noval">—</td>`; }
+      if(!w){ liveCell = `<td class="live noval" data-label="For this patient">—</td>`; }
       else {
         const mg = (perKg,max)=>{ let v=perKg*w.kg; if(v>max)v=max; return fmtNum(v/1000)+' mg'; };
         const d1=mg(100,6000), d2=mg(200,12000), d3=mg(300,12000);
-        liveCell = `<td class="live">1st ${d1} · 2nd ${d2} · 3rd ${d3}<span class="w">100/200/300 mcg/kg × ${w.kg} kg (max 6/12/12 mg)</span></td>`;
+        liveCell = `<td class="live" data-label="For this patient">1st ${d1} · 2nd ${d2} · 3rd ${d3}<span class="w">100/200/300 mcg/kg × ${w.kg} kg (max 6/12/12 mg)</span></td>`;
       }
     }
     else if(d.anaphAdren){
       const ay = S.ageYears;
-      if(ay==null){ liveCell = `<td class="live noval">enter age</td>`; }
+      if(ay==null){ liveCell = `<td class="live noval" data-label="For this patient">enter age</td>`; }
       else {
         let band = ay<6 ? '&lt;6 yr → 150 mcg' : (ay<=12 ? '6–12 yr → 300 mcg' : '&gt;12 yr → 500 mcg');
-        liveCell = `<td class="live">${band}<span class="w">IM 1:1000 · by age band (age ${fmtNum(ay)} yr)</span></td>`;
+        liveCell = `<td class="live" data-label="For this patient">${band}<span class="w">IM 1:1000 · by age band (age ${fmtNum(ay)} yr)</span></td>`;
       }
     }
-    else if(d.special){ liveCell = `<td class="live noval">${d.special}</td>`; }
-    else if(!w){ liveCell = `<td class="live noval">—</td>`; }
+    else if(d.special){ liveCell = `<td class="live noval" data-label="For this patient">${d.special}</td>`; }
+    else if(!w){ liveCell = `<td class="live noval" data-label="For this patient">—</td>`; }
     else {
       const c = calcDose(d);
-      liveCell = `<td class="live">${c.result}<span class="w">${c.working}</span></td>`;
+      liveCell = `<td class="live" data-label="For this patient">${c.result}<span class="w">${c.working}</span></td>`;
     }
     const guideCell = d.adenosine ? '100 / 200 / 300 mcg/kg<br><small style="color:var(--muted)">max 6 / 12 / 12 mg</small>'
       : d.anaphAdren ? 'IM (1:1000): &lt;6yr 150mcg · 6–12yr 300mcg · &gt;12yr 500mcg'
@@ -115,8 +115,8 @@ function renderDrugTable(){
     const rxhCls = d.same ? 'rxh same' : 'rxh';
     return `<tr>
       <th><span class="classdot cd-${d.c}"></span>${d.name}<small>${d.note}</small></th>
-      <td>${guideCell}</td>
-      <td class="${rxhCls}">${d.rxh||'—'}</td>
+      <td data-label="Dose (APA/DAS/RCUK)">${guideCell}</td>
+      <td class="${rxhCls}" data-label="RXH if different">${d.rxh||'—'}</td>
       ${liveCell}
     </tr>`;
   }).join('');
