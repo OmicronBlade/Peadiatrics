@@ -10,7 +10,7 @@
    ============================================================ */
 
 /* ---- patient state (shared, single source of truth) ---- */
-const S = { ageYears:null, ageMonths:null, measWt:null };
+const S = { ageYears:null, ageMonths:null, measWt:null, ibw:null };
 
 /* ---- weight estimation (RXH formulae) ----
    measured weight always overrides the age estimate.        */
@@ -45,8 +45,20 @@ function fmtNum(n){
   if(n>=10)  return (Math.round(n*10)/10).toString();
   return (Math.round(n*100)/100).toString();
 }
+/* ---- dosing weight (paedspro-style) ----
+   TBW = actual/estimated weight. If an IBW is entered (and is below TBW):
+   IBW = entered value, AdjBW = IBW + 0.35 × (TBW − IBW).
+   With no IBW entered every basis falls back to TBW.            */
+function dosingWeight(basis){
+  const w = estimateWeight(); if(!w) return null;
+  const ibw = (S.ibw && S.ibw>0 && S.ibw<w.kg) ? S.ibw : null;
+  if(basis==='IBW' && ibw)   return {kg:ibw, source:'IBW', label:'IBW'};
+  if(basis==='AdjBW' && ibw) return {kg:Math.round((ibw+0.35*(w.kg-ibw))*10)/10, source:'AdjBW', label:'AdjBW'};
+  return {kg:w.kg, source:w.source, label:'TBW'};
+}
 function calcDose(d){
-  const w = estimateWeight();
+  const w = d.basis ? dosingWeight(d.basis) : estimateWeight();
+  const lab = d.basis ? ` (${w?w.label:''})` : '';
   if(!w) return {ok:false, text:d.label||'enter weight'};
   // range dose: d.hi present → compute low–high
   if(d.hi!=null){
@@ -54,8 +66,8 @@ function calcDose(d){
     let cappedLo=false, cappedHi=false;
     if(d.max!=null && lo>d.max){ lo=d.max; cappedLo=true; }
     if(d.max!=null && hi>d.max){ hi=d.max; cappedHi=true; }
-    const rng = `${fmtNum(lo)}–${fmtNum(hi)}`;
-    const workBase = `${d.perKg}–${d.hi} ${d.unit}/kg × ${w.kg} kg`;
+    const rng = (lo===hi) ? fmtNum(lo) : `${fmtNum(lo)}–${fmtNum(hi)}`;
+    const workBase = `${d.perKg}–${d.hi} ${d.unit}/kg × ${w.kg} kg${lab}`;
     return {
       ok:true,
       result:`${d.prefix||''}${rng} ${d.unit}${d.suffix||''}`,
@@ -67,7 +79,7 @@ function calcDose(d){
   if(d.max!=null && val>d.max){ val=d.max; capped=true; }
   if(d.roundTo){ val = Math.round(val/d.roundTo)*d.roundTo; }
   const num = fmtNum(val);
-  const working = `${d.perKg} ${d.unit}/kg × ${w.kg} kg`;
+  const working = `${d.perKg} ${d.unit}/kg × ${w.kg} kg${lab}`;
   return {
     ok:true,
     result:`${d.prefix||''}${num} ${d.unit}${d.suffix||''}`,

@@ -33,6 +33,13 @@
         <span class="unit">kg</span>
       </div>
     </div>
+    <div class="field">
+      <label for="ibwVal">IBW (optional)</label>
+      <div class="row">
+        <input id="ibwVal" type="number" min="0" step="0.1" inputmode="decimal" placeholder="obese">
+        <span class="unit" id="adjLbl">kg</span>
+      </div>
+    </div>
     <div class="estwt" id="estWtBox">
       <div class="lbl" id="estWtLbl">Est. weight</div>
       <div class="val" id="estWtVal">—</div>
@@ -96,57 +103,67 @@ const EMERG = [
   {c:'met', name:'Sodium bicarbonate 8.4%', note:'if gas unavailable', perKg:1, unit:'mL', rxh:'BE×wt/6 (>5kg)', same:true},
 ];
 
-/* helper: per-kg infusion/rate result */
-const rate = (n,u)=>`${fmtNum(n)} ${u}`;
+/* helper: live result for a dose on a dosing-weight basis (units that aren't plain X/kg) */
+const L = (perKg,hi,unit,basis,per)=>(w0)=>{
+  const w=dosingWeight(basis); if(!w) return null;
+  const r = hi!=null ? `${fmtNum(perKg*w.kg)}–${fmtNum(hi*w.kg)} ${unit}` : `${fmtNum(perKg*w.kg)} ${unit}`;
+  return {result:r, working:`${perKg}${hi!=null?'–'+hi:''} ${per||unit+'/kg'} × ${w.kg} kg (${w.label})`};
+};
 
-/* ---- drug groups ---- */
+/* ---- drug groups ----
+   src:'pp'  = dose from paedspro.com (Anaesthesia screens)
+   pp:'…'    = paedspro's value where it differs from the RXH value shown
+   basis     = dosing weight (TBW / IBW / AdjBW) — see dosingWeight() in calc.js */
 const GROUPS = [
 
-{id:'premed', title:'Premedication & apnoea prevention', pill:'Pre-op · RXH', c:'neu',
+{id:'premed', title:'Premeds & apnoea prevention', pill:'Pre-op', c:'neu',
  note:'Fasting: solids &gt;6 h · breast milk &gt;4 h · clear fluid &gt;1 h pre-op. Apnoea monitoring 12 h post-op (term &lt;50 wk PCA · premature &lt;60 wk PCA).',
  drugs:[
-  {c:'neu', name:'Clonidine', note:'PO premed', perKg:3, hi:4, unit:'mcg', rxh:'90 min pre-op'},
-  {c:'neu', name:'Midazolam', note:'PO premed', perKg:0.2, hi:0.3, unit:'mg', max:7.5, rxh:'30 min pre-op, “on trolley” · max 7.5 mg'},
+  {c:'neu', name:'Clonidine', note:'PO premed', perKg:3, hi:4, unit:'mcg', basis:'TBW', rxh:'90 min pre-op', pp:'1–5 mcg/kg (TBW)'},
+  {c:'neu', name:'Midazolam', note:'PO premed', perKg:0.2, hi:0.3, unit:'mg', max:7.5, basis:'TBW', rxh:'30 min pre-op, “on trolley” · max 7.5 mg', pp:'0.5 mg/kg (TBW)'},
+  {c:'neu', name:'Ketamine', note:'PO premed', perKg:5, hi:10, unit:'mg', basis:'IBW', src:'pp', rxh:'—'},
+  {c:'neu', name:'Dexmedetomidine', note:'intranasal premed', perKg:2, hi:3, unit:'mcg', basis:'AdjBW', src:'pp', rxh:'RXH: 3–4 mcg/kg intranasal (emergence delirium)'},
   {c:'neu', name:'Caffeine citrate', note:'PO · premature &lt;60 wk PCA', perKg:20, unit:'mg', rxh:'2 h pre-op; then 5–10 mg/kg daily PO ×48 h post-op. (Anhydrous caffeine: 10 mg/kg, then 5 mg/kg OD)'},
   {c:'neu', name:'Aminophylline', note:'IV slowly, intra-op · premature', perKg:5, hi:10, unit:'mg', rxh:'apnoea prevention'},
  ]},
 
-{id:'antiemetic', title:'Anti-emetics', pill:'PONV · RXH', c:'last',
+{id:'antiemetic', title:'Anti-emetics', pill:'PONV', c:'last',
  note:'PCA patients must have a PRN antiemetic. 1st line ondansetron · 2nd droperidol · 3rd metoclopramide.',
  drugs:[
-  {c:'last', name:'Ondansetron', note:'IV · PONV prophylaxis / PCA 1st line', perKg:0.15, unit:'mg', rxh:'PCA: 8-hourly'},
-  {c:'last', name:'Dexamethasone', note:'IV · PONV prophylaxis', perKg:0.15, unit:'mg', rxh:'—'},
+  {c:'last', name:'Ondansetron', note:'IV · PONV prophylaxis / PCA 1st line', perKg:0.15, unit:'mg', basis:'TBW', rxh:'PCA: 8-hourly', pp:'0.2 mg/kg (TBW)'},
+  {c:'last', name:'Dexamethasone', note:'IV · PONV prophylaxis', perKg:0.15, unit:'mg', basis:'TBW', rxh:'same in both guides'},
   {c:'last', name:'Droperidol', note:'IV · PCA 2nd line', perKg:0.02, unit:'mg', max:0.5, rxh:'6–8-hourly · max 0.5 mg'},
   {c:'last', name:'Metoclopramide', note:'IV · PCA 3rd line', perKg:0.3, unit:'mg', max:15, rxh:'8-hourly · max 15 mg'},
   {c:'last', name:'Lactulose', note:'PO · stool softener with PCA', perKg:0.5, unit:'mL', rxh:'12-hourly PRN'},
  ]},
 
-{id:'analg-intra', title:'Analgesia — intra-operative', pill:'Analgesia · RXH', c:'cir',
+{id:'analg-intra', title:'Analgesia — intra-operative', pill:'Analgesia', c:'cir',
  note:'* Diclofenac, parecoxib and ibuprofen are contraindicated under 1 year.',
  drugs:[
-  {c:'cir', name:'Paracetamol', note:'IV', perKg:15, unit:'mg', rxh:'loading dose 20 mg/kg'},
-  {c:'cir', name:'Diclofenac*', note:'PR', perKg:1, unit:'mg', rxh:'contraindicated &lt;1 yr'},
+  {c:'cir', name:'Paracetamol', note:'IV', perKg:15, unit:'mg', basis:'AdjBW', rxh:'loading dose 20 mg/kg'},
+  {c:'cir', name:'Diclofenac*', note:'PR (paedspro: IV/PO)', perKg:1, unit:'mg', basis:'AdjBW', rxh:'contraindicated &lt;1 yr'},
   {c:'cir', name:'Parecoxib*', note:'IV', perKg:1, unit:'mg', max:40, rxh:'max 40 mg · contraindicated &lt;1 yr'},
   {c:'cir', name:'Ketamine', note:'IV', perKg:0.25, hi:0.5, unit:'mg', rxh:'—'},
   {c:'cir', name:'Clonidine', note:'IV', perKg:1, hi:2, unit:'mcg', rxh:'—'},
-  {c:'cir', name:'Fentanyl', note:'IV', perKg:1, hi:2, unit:'mcg', rxh:'—'},
-  {c:'cir', name:'Morphine', note:'IV', perKg:0.1, unit:'mg', rxh:'—'},
-  {c:'cir', name:'Alfentanil', note:'IV', perKg:10, unit:'mcg', rxh:'—'},
+  {c:'cir', name:'Fentanyl', note:'IV', perKg:1, hi:2, unit:'mcg', basis:'AdjBW', rxh:'same in both guides'},
+  {c:'cir', name:'Morphine', note:'IV', perKg:0.1, unit:'mg', basis:'IBW', rxh:'—', pp:'0.05–0.1 mg/kg (IBW)'},
+  {c:'cir', name:'Morphine', note:'IM', perKg:0.1, unit:'mg', basis:'AdjBW', src:'pp', rxh:'—'},
+  {c:'cir', name:'Alfentanil', note:'IV', perKg:10, unit:'mcg', basis:'AdjBW', rxh:'—', pp:'10–20 mcg/kg (AdjBW)'},
  ]},
 
-{id:'analg-post', title:'Analgesia — post-operative', pill:'Analgesia · RXH', c:'cir',
+{id:'analg-post', title:'Analgesia — post-operative', pill:'Analgesia', c:'cir',
  note:'* Ibuprofen contraindicated &lt;1 yr. Gabapentin: initiate and wean over 3 days (day 1 nocte, day 2 12-hourly, day 3 8-hourly). Pain scores: revised FLACC (2 mo–16 yr), NIPS (&lt;2 mo).',
  drugs:[
-  {c:'cir', name:'Paracetamol', note:'PO', perKg:15, unit:'mg', rxh:'6-hourly'},
-  {c:'cir', name:'Ibuprofen*', note:'PO', perKg:5, hi:10, unit:'mg', rxh:'8-hourly · contraindicated &lt;1 yr'},
-  {c:'cir', name:'Clonidine', note:'PO', perKg:2, hi:5, unit:'mcg', rxh:'8-hourly'},
+  {c:'cir', name:'Paracetamol', note:'PO', perKg:15, unit:'mg', basis:'AdjBW', rxh:'6-hourly'},
+  {c:'cir', name:'Ibuprofen*', note:'PO', perKg:5, hi:10, unit:'mg', basis:'AdjBW', rxh:'8-hourly · contraindicated &lt;1 yr', pp:'TDS 10 mg/kg · QDS 5 mg/kg (AdjBW)'},
+  {c:'cir', name:'Clonidine', note:'PO', perKg:2, hi:5, unit:'mcg', basis:'TBW', rxh:'8-hourly', pp:'1–5 mcg/kg (TBW) as premed'},
   {c:'cir', name:'Gabapentin', note:'PO', perKg:3, hi:10, unit:'mg', rxh:'8-hourly · see titration note'},
   {c:'cir', name:'Morphine — oral', note:'by age band', guide:'Neonate 0.05 · 1 mo–1 yr 0.05–0.2 · &gt;1 yr 0.2–0.4 mg/kg',
    live:(w)=>{ const m=ageM(); if(!w||m==null) return null;
      const [lo,hi,band]= m<1?[0.05,null,'neonate']: m<12?[0.05,0.2,'1 mo–1 yr']:[0.2,0.4,'>1 yr'];
      const r = hi?`${fmtNum(lo*w.kg)}–${fmtNum(hi*w.kg)} mg`:`${fmtNum(lo*w.kg)} mg`;
      return {result:r, working:`${band}: ${lo}${hi?'–'+hi:''} mg/kg × ${w.kg} kg`}; },
-   rxh:'4–6-hourly (neonate 6-hourly)'},
+   rxh:'4–6-hourly (neonate 6-hourly)', pp:'0.1–0.2 mg/kg (IBW)'},
   {c:'cir', name:'Morphine — infusion', note:'IV', guide:'0.5 × weight (kg) mg in 50 mL N.Saline',
    live:(w)=>w&&{result:`${fmtNum(0.5*w.kg)} mg in 50 mL`, working:`0.5 mg × ${w.kg} kg · run 1–3 mL/h`}, rxh:'run 1–3 mL/h'},
   {c:'cir', name:'Ketamine — infusion', note:'IV · 0.2–0.3 mg/kg/h', guide:'5 mg/kg in 50 mL N.Saline',
@@ -173,30 +190,35 @@ const GROUPS = [
    <p class="hint">PCA needs a PRN antiemetic (see Anti-emetics) and consider a stool softener.</p>`;
  }},
 
-{id:'agents', title:'Anaesthetic & sedative agents', pill:'Induction · mixed', c:'neu',
- note:'Items badged UNVERIFIED are not in the RXH guide — drafted from standard references; check before use.',
+{id:'agents', title:'Anaesthetic & sedative agents', pill:'Induction & maintenance', c:'neu',
+ note:'Items badged <span class="unv">UNVERIFIED</span> are in neither the RXH guide nor paedspro — drafted from standard references; check before use.',
  drugs:[
-  {c:'neu', name:'Propofol', note:'IV induction', perKg:2, hi:4, unit:'mg', unv:true, rxh:'standard induction range'},
-  {c:'neu', name:'Thiopentone', note:'IV induction', perKg:3, hi:5, unit:'mg', unv:true, rxh:'—'},
-  {c:'neu', name:'Ketamine', note:'IV induction', perKg:1, hi:2, unit:'mg', rxh:'also TIVA bolus (see Infusions)'},
+  {c:'neu', name:'Propofol — bolus', note:'IV induction', perKg:1, hi:4, unit:'mg', basis:'IBW', src:'pp', rxh:'—'},
+  {c:'neu', name:'Propofol — infusion', note:'IV', guide:'1–15 mg/kg/h (AdjBW)', live:L(1,15,'mg/h','AdjBW','mg/kg/h'), src:'pp', rxh:'—'},
+  {c:'neu', name:'Propofol TCI', note:'enter this weight in the pump', guide:'AdjBW',
+   live:(w)=>{const x=dosingWeight('AdjBW'); return x&&{result:`${x.kg} kg`, working:`weight to enter (${x.label})`};}, src:'pp', rxh:'—'},
+  {c:'neu', name:'Remifentanil TCI', note:'enter this weight in the pump', guide:'AdjBW',
+   live:(w)=>{const x=dosingWeight('AdjBW'); return x&&{result:`${x.kg} kg`, working:`weight to enter (${x.label})`};}, src:'pp', rxh:'—'},
+  {c:'neu', name:'Ketamine', note:'IV induction', perKg:1, hi:2, unit:'mg', basis:'IBW', rxh:'same in both guides; also TIVA bolus (see Infusions)'},
+  {c:'neu', name:'Thiopentone', note:'IV induction', perKg:3, hi:5, unit:'mg', basis:'IBW', src:'pp', rxh:'—'},
   {c:'neu', name:'Etomidate', note:'IV induction', perKg:0.3, unit:'mg', unv:true, rxh:'—'},
-  {c:'neu', name:'Midazolam', note:'IV sedation', perKg:0.05, hi:0.1, unit:'mg', unv:true, rxh:'titrate'},
-  {c:'neu', name:'Dexmedetomidine', note:'IV bolus', perKg:1, unit:'mcg', rxh:'intranasal 3–4 mcg/kg (emergence delirium)'},
+  {c:'neu', name:'Dexmedetomidine', note:'IV bolus', perKg:1, unit:'mcg', basis:'IBW', rxh:'intranasal 3–4 mcg/kg (emergence delirium)', pp:'0.5 mcg/kg (IBW)'},
   {c:'neu', name:'Propofol — emergence delirium', note:'IV', perKg:1, unit:'mg', rxh:'PAED score &gt;10–12 · rule out pain/hypoxia first'},
   {c:'neu', name:'Clonidine — emergence delirium', note:'IV', perKg:0.5, hi:1, unit:'mcg', rxh:'—'},
  ]},
 
-{id:'nmb', title:'Muscle relaxants & reversal', pill:'NMB · RXH reversal', c:'air',
- note:'Reversal doses and the Red Cross mix are from the RXH guide. Relaxant intubating doses and sugammadex are UNVERIFIED (not in the RXH guide).',
+{id:'nmb', title:'Muscle relaxants & reversal', pill:'NMB', c:'air',
+ note:'Reversal doses and the Red Cross mix are from the RXH guide; relaxant doses are from paedspro. Items badged <span class="unv">UNVERIFIED</span> are in neither.',
  drugs:[
-  {c:'air', name:'Suxamethonium', note:'IV (IM 4 mg/kg if no access)', perKg:1.5, unit:'mg', rxh:'from emergency list'},
-  {c:'air', name:'Rocuronium — RSI', note:'IV', perKg:1.2, unit:'mg', rxh:'from emergency list'},
-  {c:'air', name:'Rocuronium — routine', note:'IV', perKg:0.6, unit:'mg', unv:true, rxh:'—'},
-  {c:'air', name:'Atracurium', note:'IV', perKg:0.5, unit:'mg', unv:true, rxh:'—'},
+  {c:'air', name:'Suxamethonium', note:'IV', perKg:1, hi:2, unit:'mg', basis:'TBW', src:'pp', rxh:'emergency list uses 1.5 mg/kg'},
+  {c:'air', name:'Suxamethonium', note:'IM (if no access)', perKg:4, unit:'mg', basis:'TBW', src:'pp', rxh:'—'},
+  {c:'air', name:'Rocuronium', note:'IV routine', perKg:0.6, hi:1, unit:'mg', basis:'IBW', src:'pp', rxh:'RSI 1.2 mg/kg (emergency list)'},
+  {c:'air', name:'Atracurium', note:'IV', perKg:0.5, unit:'mg', basis:'IBW', src:'pp', rxh:'—'},
   {c:'air', name:'Cisatracurium', note:'IV', perKg:0.15, unit:'mg', unv:true, rxh:'—'},
   {c:'air', name:'Vecuronium', note:'IV', perKg:0.1, unit:'mg', unv:true, rxh:'—'},
-  {c:'air', name:'Sugammadex', note:'IV · routine reversal', perKg:2, unit:'mg', unv:true, rxh:'deeper block: 4 mg/kg'},
-  {c:'air', name:'Neostigmine', note:'IV reversal', perKg:0.05, unit:'mg', rxh:'with glycopyrrolate or atropine'},
+  {c:'air', name:'Sugammadex', note:'IV · routine (2 mg/kg)', perKg:2, unit:'mg', basis:'TBW', src:'pp', rxh:'—'},
+  {c:'air', name:'Sugammadex', note:'IV · immediate reversal (16 mg/kg)', perKg:16, unit:'mg', basis:'TBW', src:'pp', rxh:'—'},
+  {c:'air', name:'Neostigmine', note:'IV reversal', perKg:0.05, unit:'mg', basis:'TBW', rxh:'with glycopyrrolate or atropine · same in both guides'},
   {c:'air', name:'Glycopyrrolate', note:'IV with neostigmine', perKg:0.01, unit:'mg', rxh:'—'},
   {c:'air', name:'Atropine', note:'IV alternative to glycopyrrolate', perKg:0.02, unit:'mg', rxh:'—'},
   {c:'air', name:'Red Cross reversal mix', note:'neostigmine 2.5 mg + glycopyrrolate 0.4 mg, made up to 5 mL with N.Saline',
@@ -205,9 +227,13 @@ const GROUPS = [
      return {result:`${fmtNum(v)} mL`, working: w.kg<10?`0.1 mL/kg × ${w.kg} kg`:`${w.kg} kg ÷ 10`}; }, rxh:'—'},
  ]},
 
-{id:'la', title:'Local anaesthetics & regional', pill:'Regional · RXH', c:'met',
- note:'Maximum toxic doses below are UNVERIFIED (not in the RXH guide). Treat LAST per the Metabolic emergency pathway.',
+{id:'la', title:'Local anaesthetics & regional', pill:'Regional', c:'met',
+ note:'Maximum doses are from paedspro (IBW). Caudal/epidural/wound volumes are from the RXH guide. Treat LAST per the Metabolic emergency pathway.',
  drugs:[
+  {c:'met', name:'Lidocaine — infiltration', note:'maximum dose', perKg:3, unit:'mg', basis:'IBW', src:'pp', rxh:'1% = 10 mg/mL'},
+  {c:'met', name:'Lidocaine + adrenaline', note:'maximum dose', perKg:7, unit:'mg', basis:'IBW', src:'pp', rxh:'—'},
+  {c:'met', name:'Bupivacaine', note:'maximum dose', perKg:2, unit:'mg', basis:'IBW', src:'pp', rxh:'0.25% = 2.5 mg/mL · 0.5% = 5 mg/mL'},
+  {c:'met', name:'Ropivacaine', note:'maximum dose', perKg:3, unit:'mg', basis:'IBW', src:'pp', rxh:'—'},
   {c:'met', name:'Caudal 0.25% bupivacaine — sacro-lumbar', note:'volume', perKg:0.5, unit:'mL', rxh:'1 mcg/kg clonidine may be added'},
   {c:'met', name:'Caudal 0.25% bupivacaine — upper abdominal', note:'volume', perKg:1, unit:'mL', rxh:'1 mcg/kg clonidine may be added'},
   {c:'met', name:'Caudal 0.25% bupivacaine — mid-thoracic', note:'volume', perKg:1.2, unit:'mL', rxh:'mid-thoracic level not reliably achieved'},
@@ -221,21 +247,20 @@ const GROUPS = [
    live:(w)=>{ const m=ageM(); if(!w||m==null) return null;
      return {result:`${m<4?'0.1':'0.2'}% · ${fmtNum(0.1*w.kg)}–${fmtNum(0.2*w.kg)} mL/h`, working:`0.1–0.2 mL/kg/h × ${w.kg} kg`}; }, rxh:'needs age'},
   {c:'met', name:'Clysis — max volume', note:'bupivacaine 0.5% 10 mL + adrenaline 1:1000 1 mL; take 4.5 mL of mix into 200 mL N.Saline', perKg:20, unit:'mL', rxh:'max 20 mL/kg'},
-  {c:'met', name:'Bupivacaine / levobupivacaine / ropivacaine', note:'maximum dose', perKg:2.5, unit:'mg', unv:true, rxh:'0.25% = 2.5 mg/mL · 0.5% = 5 mg/mL'},
-  {c:'met', name:'Lignocaine — maximum', note:'plain', perKg:3, unit:'mg', unv:true, rxh:'with adrenaline ≈ 7 mg/kg · 1% = 10 mg/mL'},
  ]},
 
-{id:'anticonv', title:'Anticonvulsants', pill:'Seizures · unverified', c:'neu',
- note:'<b>None of these are in the RXH guide.</b> All doses are UNVERIFIED drafts from standard paediatric (APLS-type) references — verify against the SAMF before use. Secure airway, check glucose, give 100% O₂.',
+{id:'anticonv', title:'Anticonvulsants', pill:'Seizures', c:'neu',
+ note:'Lorazepam, midazolam and diazepam are from paedspro. Levetiracetam, phenytoin and phenobarbitone are <span class="unv">UNVERIFIED</span> (standard references). Secure airway, check glucose, give 100% O₂.',
  drugs:[
-  {c:'neu', name:'Midazolam', note:'IV/IO first line', perKg:0.1, unit:'mg', max:5, unv:true, rxh:'repeat once if needed'},
-  {c:'neu', name:'Lorazepam', note:'IV/IO', perKg:0.1, unit:'mg', max:4, unv:true, rxh:'—'},
-  {c:'neu', name:'Levetiracetam', note:'IV second line', perKg:40, unit:'mg', max:3000, unv:true, rxh:'over 5–15 min'},
+  {c:'neu', name:'Lorazepam', note:'IV loading', perKg:0.1, unit:'mg', max:4, basis:'TBW', src:'pp', rxh:'cap 4 mg inferred from paedspro (4.0 mg at 40 kg)'},
+  {c:'neu', name:'Midazolam', note:'IV loading', perKg:0.05, hi:0.1, unit:'mg', basis:'TBW', src:'pp', rxh:'—'},
+  {c:'neu', name:'Diazepam', note:'IV', perKg:0.3, unit:'mg', max:10, basis:'TBW', src:'pp', rxh:'cap 10 mg inferred from paedspro (10 mg shown at 40 kg)'},
+  {c:'neu', name:'Levetiracetam', note:'IV loading', perKg:40, unit:'mg', max:3000, unv:true, rxh:'paedspro lists it (285 mg at 40 kg / AdjBW 28.5 kg; basis not visible) — confirm'},
   {c:'neu', name:'Phenytoin', note:'IV second line', perKg:20, unit:'mg', unv:true, rxh:'over ≥20 min with ECG monitoring'},
   {c:'neu', name:'Phenobarbitone', note:'IV (neonates / alternative)', perKg:20, unit:'mg', unv:true, rxh:'over 20 min'},
  ]},
 
-{id:'infusions', title:'Infusions (make-up & rates)', pill:'Infusions · RXH', c:'cir',
+{id:'infusions', title:'Infusions (make-up & rates)', pill:'Infusions', c:'cir',
  note:'Standard syringe: drug in 50 mL N.Saline unless stated. Rates are for the entered weight.',
  drugs:[
   {c:'cir', name:'Adrenaline', note:'60 mcg/kg in 50 mL · 1 mL/h = 0.02 mcg/kg/min', guide:'60 mcg/kg in 50 mL',
@@ -245,7 +270,7 @@ const GROUPS = [
   {c:'cir', name:'Milrinone', note:'1.5 mg/kg in 50 mL · 1 mL/h = 0.5 mcg/kg/min', guide:'1.5 mg/kg in 50 mL',
    live:(w)=>w&&{result:`${fmtNum(1.5*w.kg)} mg in 50 mL`, working:`1.5 mg × ${w.kg} kg`}, rxh:'range 0.25–0.75 mcg/kg/min'},
   {c:'neu', name:'Dexmedetomidine', note:'10 mcg/kg in 50 mL · 1 mL/h = 0.2 mcg/kg/h', guide:'10 mcg/kg in 50 mL · bolus 1 mcg/kg',
-   live:(w)=>w&&{result:`${fmtNum(10*w.kg)} mcg in 50 mL`, working:`10 mcg × ${w.kg} kg · bolus ${fmtNum(w.kg)} mcg`}, rxh:'range 0.2–1.5 mcg/kg/h (1–7.5 mL/h)'},
+   live:(w)=>w&&{result:`${fmtNum(10*w.kg)} mcg in 50 mL`, working:`10 mcg × ${w.kg} kg · bolus ${fmtNum(w.kg)} mcg`}, rxh:'range 0.2–1.5 mcg/kg/h (1–7.5 mL/h)', pp:'0.2 mcg/kg/h (IBW)'},
   {c:'cir', name:'Remifentanil', note:'10 mcg/mL · rate = weight × 0.6 mL/h = 0.1 mcg/kg/min', guide:'10 mcg/mL',
    live:(w)=>w&&{result:`${fmtNum(0.6*w.kg)}–${fmtNum(1.8*w.kg)} mL/h`, working:`0.1–0.3 mcg/kg/min · 0.6 × ${w.kg} kg per 0.1`}, rxh:'range 0.1–0.3 mcg/kg/min'},
   {c:'cir', name:'Sufentanil', note:'1 mcg/mL (10 mL of 5 mcg/mL to 50 mL)', guide:'&lt;20 kg: 10 mL/h · &gt;20 kg: 20 mL/h',
@@ -306,11 +331,14 @@ function renderDrugTable(list, opts={}){
       : d.anaphAdren ? 'IM (1:1000): &lt;6yr 150mcg · 6–12yr 300mcg · &gt;12yr 500mcg'
       : (d.special?d.special:(d.hi!=null?d.perKg+'–'+d.hi:d.perKg)+' '+d.unit+'/kg'+(d.max?'<br><small style="color:var(--muted)">max '+d.max+' '+d.unit+'</small>':''));
     const rxhCls = d.same ? 'rxh same' : 'rxh';
-    const badge = d.unv ? ' <span class="unv" title="Not in the RXH guide — verify against the SAMF">UNVERIFIED</span>' : '';
+    const badge = d.unv ? ' <span class="unv" title="Not in the RXH guide or paedspro — verify against the SAMF">UNVERIFIED</span>'
+      : d.src==='pp' ? ' <span class="ppb" title="Dose from paedspro.com">paedspro</span>' : '';
+    const basisTag = d.basis && d.basis!=='TBW' ? ` <span class="basis">${d.basis}</span>` : '';
+    const ppNote = d.pp ? `<br><span class="ppnote">paedspro: ${d.pp}</span>` : '';
     return `<tr${d.unv?' class="unvrow"':''}>
-      <th><span class="classdot cd-${d.c}"></span>${d.name}${badge}<small>${d.note||''}</small></th>
+      <th><span class="classdot cd-${d.c}"></span>${d.name}${badge}${basisTag}<small>${d.note||''}</small></th>
       <td data-label="${doseHead}">${guideCell}</td>
-      <td class="${rxhCls}" data-label="${notesHead}">${d.rxh||'—'}</td>
+      <td class="${rxhCls}" data-label="${notesHead}">${d.rxh||'—'}${ppNote}</td>
       ${liveCell}
     </tr>`;
   }).join('');
@@ -328,7 +356,7 @@ function renderGroup(g){
   return (g.note?`<span class="flag" style="margin:6px 0 10px;">${g.note}</span>`:'')
     + renderDrugTable(g.drugs,{doseHead:'Dose', notesHead:'Notes / timing'})
     + (g.extra?g.extra():'')
-    + `<p class="hint">Source: RXH Paediatric Anaesthesia Quick Reference Guide (2023 v3)${unv?'; drugs badged <span class="unv">UNVERIFIED</span> are not in that guide':''}. Always verify against the SAMF.</p>`;
+    + `<p class="hint">Sources: RXH Paediatric Anaesthesia Quick Reference Guide (2023 v3) and paedspro.com (badged <span class="ppb">paedspro</span>)${unv?'; <span class="unv">UNVERIFIED</span> = in neither':''}. Tags like <span class="basis">IBW</span> = dosing weight; enter an IBW above for children where actual weight is not appropriate. Always verify against the SAMF.</p>`;
 }
 
 /* ---- page sections ---- */
@@ -369,6 +397,20 @@ MEPA.init({
   emptyTitle: 'Drug reference',
   emptyBody: 'Pick a drug group. Doses are calculated live for the entered weight.'
 });
+
+/* ---- optional ideal body weight (drives IBW / AdjBW dosing weights) ---- */
+(function(){
+  const el=document.getElementById('ibwVal'), lbl=document.getElementById('adjLbl'), clr=document.getElementById('clearBtn');
+  function sync(){
+    const v=parseFloat(el.value); S.ibw=(!isNaN(v)&&v>0)?v:null;
+    const a=dosingWeight('AdjBW');
+    lbl.textContent = (S.ibw && a && a.label==='AdjBW') ? 'kg · AdjBW '+a.kg : 'kg';
+    MEPA.render();
+  }
+  el.addEventListener('input',sync);
+  ['ageVal','ageUnit','measWt'].forEach(id=>document.getElementById(id).addEventListener('input',sync));
+  if(clr) clr.addEventListener('click',()=>{ el.value=''; S.ibw=null; lbl.textContent='kg'; MEPA.render(); });
+})();
 </script>
 </body>
 </html>
