@@ -305,3 +305,11 @@
   body{background:#fff;font-size:12px;}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 }
+
+/* unverified drug flag + sub-headings (drug reference) */
+.unv{display:inline-block;background:#fff4e0;color:var(--warn);border:1px solid #e2b877;border-radius:4px;
+  font-size:9px;font-weight:800;letter-spacing:.5px;padding:1px 5px;margin-left:6px;vertical-align:middle;white-space:nowrap;}
+table.drugs tr.unvrow>th{background:#fffaf0;}
+.subh{margin:16px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
+table.drugs td.live{white-space:normal;min-width:140px;}
+.wrap>*{min-width:0;}

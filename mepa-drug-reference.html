@@ -58,8 +58,21 @@
 <script src="assets/calc.js"></script>
 <script src="assets/site.js"></script>
 <script>
-/* ---- drug data (shared with the interactive tool) ---- */
-const DRUGS = [
+/* ============================================================
+   DRUG DATA
+   src: default = RXH Paediatric Anaesthesia Quick Reference Guide (2023 v3)
+        unv:true = NOT in the RXH guide — drafted from standard paediatric
+                   references; shown with an UNVERIFIED badge. Verify against
+                   the SAMF / local formulary, then remove the flag.
+   Fields: name, note, perKg/hi/unit/max (weight-linear dose),
+           guide (text override), live(w) → {result,working} (custom calc),
+           rxh (notes / timing column)
+   ============================================================ */
+const kgOf = w=>w?w.kg:null;
+const ageM = ()=>S.ageMonths;
+
+/* ---- emergency drugs (shared with the interactive tool) ---- */
+const EMERG = [
   {c:'cir', name:'Adrenaline — arrest', note:'IV/IO, q3–5 min', perKg:10, unit:'mcg', rxh:'same (q4min)', same:true},
   {c:'cir', name:'Adrenaline — anaphylaxis', note:'IM 1:1000 anterolateral thigh, repeat 5 min', anaphAdren:true, rxh:'IV 1 mcg/kg + IM 10 mcg/kg (max 500mcg)'},
   {c:'air', name:'Atropine', note:'IV/IO · max 4 mg', perKg:20, unit:'mcg', max:4000, rxh:'0.02 mg/kg', same:true},
@@ -83,11 +96,190 @@ const DRUGS = [
   {c:'met', name:'Sodium bicarbonate 8.4%', note:'if gas unavailable', perKg:1, unit:'mL', rxh:'BE×wt/6 (>5kg)', same:true},
 ];
 
-function renderDrugTable(){
+/* helper: per-kg infusion/rate result */
+const rate = (n,u)=>`${fmtNum(n)} ${u}`;
+
+/* ---- drug groups ---- */
+const GROUPS = [
+
+{id:'premed', title:'Premedication & apnoea prevention', pill:'Pre-op · RXH', c:'neu',
+ note:'Fasting: solids &gt;6 h · breast milk &gt;4 h · clear fluid &gt;1 h pre-op. Apnoea monitoring 12 h post-op (term &lt;50 wk PCA · premature &lt;60 wk PCA).',
+ drugs:[
+  {c:'neu', name:'Clonidine', note:'PO premed', perKg:3, hi:4, unit:'mcg', rxh:'90 min pre-op'},
+  {c:'neu', name:'Midazolam', note:'PO premed', perKg:0.2, hi:0.3, unit:'mg', max:7.5, rxh:'30 min pre-op, “on trolley” · max 7.5 mg'},
+  {c:'neu', name:'Caffeine citrate', note:'PO · premature &lt;60 wk PCA', perKg:20, unit:'mg', rxh:'2 h pre-op; then 5–10 mg/kg daily PO ×48 h post-op. (Anhydrous caffeine: 10 mg/kg, then 5 mg/kg OD)'},
+  {c:'neu', name:'Aminophylline', note:'IV slowly, intra-op · premature', perKg:5, hi:10, unit:'mg', rxh:'apnoea prevention'},
+ ]},
+
+{id:'antiemetic', title:'Anti-emetics', pill:'PONV · RXH', c:'last',
+ note:'PCA patients must have a PRN antiemetic. 1st line ondansetron · 2nd droperidol · 3rd metoclopramide.',
+ drugs:[
+  {c:'last', name:'Ondansetron', note:'IV · PONV prophylaxis / PCA 1st line', perKg:0.15, unit:'mg', rxh:'PCA: 8-hourly'},
+  {c:'last', name:'Dexamethasone', note:'IV · PONV prophylaxis', perKg:0.15, unit:'mg', rxh:'—'},
+  {c:'last', name:'Droperidol', note:'IV · PCA 2nd line', perKg:0.02, unit:'mg', max:0.5, rxh:'6–8-hourly · max 0.5 mg'},
+  {c:'last', name:'Metoclopramide', note:'IV · PCA 3rd line', perKg:0.3, unit:'mg', max:15, rxh:'8-hourly · max 15 mg'},
+  {c:'last', name:'Lactulose', note:'PO · stool softener with PCA', perKg:0.5, unit:'mL', rxh:'12-hourly PRN'},
+ ]},
+
+{id:'analg-intra', title:'Analgesia — intra-operative', pill:'Analgesia · RXH', c:'cir',
+ note:'* Diclofenac, parecoxib and ibuprofen are contraindicated under 1 year.',
+ drugs:[
+  {c:'cir', name:'Paracetamol', note:'IV', perKg:15, unit:'mg', rxh:'loading dose 20 mg/kg'},
+  {c:'cir', name:'Diclofenac*', note:'PR', perKg:1, unit:'mg', rxh:'contraindicated &lt;1 yr'},
+  {c:'cir', name:'Parecoxib*', note:'IV', perKg:1, unit:'mg', max:40, rxh:'max 40 mg · contraindicated &lt;1 yr'},
+  {c:'cir', name:'Ketamine', note:'IV', perKg:0.25, hi:0.5, unit:'mg', rxh:'—'},
+  {c:'cir', name:'Clonidine', note:'IV', perKg:1, hi:2, unit:'mcg', rxh:'—'},
+  {c:'cir', name:'Fentanyl', note:'IV', perKg:1, hi:2, unit:'mcg', rxh:'—'},
+  {c:'cir', name:'Morphine', note:'IV', perKg:0.1, unit:'mg', rxh:'—'},
+  {c:'cir', name:'Alfentanil', note:'IV', perKg:10, unit:'mcg', rxh:'—'},
+ ]},
+
+{id:'analg-post', title:'Analgesia — post-operative', pill:'Analgesia · RXH', c:'cir',
+ note:'* Ibuprofen contraindicated &lt;1 yr. Gabapentin: initiate and wean over 3 days (day 1 nocte, day 2 12-hourly, day 3 8-hourly). Pain scores: revised FLACC (2 mo–16 yr), NIPS (&lt;2 mo).',
+ drugs:[
+  {c:'cir', name:'Paracetamol', note:'PO', perKg:15, unit:'mg', rxh:'6-hourly'},
+  {c:'cir', name:'Ibuprofen*', note:'PO', perKg:5, hi:10, unit:'mg', rxh:'8-hourly · contraindicated &lt;1 yr'},
+  {c:'cir', name:'Clonidine', note:'PO', perKg:2, hi:5, unit:'mcg', rxh:'8-hourly'},
+  {c:'cir', name:'Gabapentin', note:'PO', perKg:3, hi:10, unit:'mg', rxh:'8-hourly · see titration note'},
+  {c:'cir', name:'Morphine — oral', note:'by age band', guide:'Neonate 0.05 · 1 mo–1 yr 0.05–0.2 · &gt;1 yr 0.2–0.4 mg/kg',
+   live:(w)=>{ const m=ageM(); if(!w||m==null) return null;
+     const [lo,hi,band]= m<1?[0.05,null,'neonate']: m<12?[0.05,0.2,'1 mo–1 yr']:[0.2,0.4,'>1 yr'];
+     const r = hi?`${fmtNum(lo*w.kg)}–${fmtNum(hi*w.kg)} mg`:`${fmtNum(lo*w.kg)} mg`;
+     return {result:r, working:`${band}: ${lo}${hi?'–'+hi:''} mg/kg × ${w.kg} kg`}; },
+   rxh:'4–6-hourly (neonate 6-hourly)'},
+  {c:'cir', name:'Morphine — infusion', note:'IV', guide:'0.5 × weight (kg) mg in 50 mL N.Saline',
+   live:(w)=>w&&{result:`${fmtNum(0.5*w.kg)} mg in 50 mL`, working:`0.5 mg × ${w.kg} kg · run 1–3 mL/h`}, rxh:'run 1–3 mL/h'},
+  {c:'cir', name:'Ketamine — infusion', note:'IV · 0.2–0.3 mg/kg/h', guide:'5 mg/kg in 50 mL N.Saline',
+   live:(w)=>w&&{result:`${fmtNum(5*w.kg)} mg in 50 mL`, working:`5 mg × ${w.kg} kg · run 2–3 mL/h`}, rxh:'run 2–3 mL/h'},
+ ],
+ extra:()=>{
+   const w=estimateWeight(); const kg=w?w.kg:null;
+   const f=(perKg,u)=>kg?`${fmtNum(perKg*kg)} ${u}`:`${perKg} ${u}/kg`;
+   let mor, fen;
+   if(kg){
+     mor = kg<30 ? `${fmtNum(kg)} mg in 50 mL · bolus 1 mL = 20 mcg/kg (${fmtNum(0.02*kg)} mg)`
+         : kg<=50 ? `${fmtNum(2*kg)} mg in 100 mL · bolus 1 mL = 20 mcg/kg (${fmtNum(0.02*kg)} mg)`
+         : `100 mg in 100 mL · bolus 1 mL = 1 mg`;
+     fen = kg<50 ? `${fmtNum(15*kg)} mcg (0.3 mcg/kg bolus, bg 1 mL/h) <b>or</b> ${fmtNum(25*kg)} mcg (0.5 mcg/kg bolus, bg 0.2–1 mL/h) in 50 mL`
+         : `750 mcg (bolus 15 mcg, bg 1 mL/h) <b>or</b> 1250 mcg (bolus 25 mcg) in 50 mL`;
+   }
+   const ket = kg ? (kg<50?`${f(1,'mg')}–${f(2,'mg')} in 50 mL · bolus 20–40 mcg/kg (${fmtNum(0.02*kg)}–${fmtNum(0.04*kg)} mg)`:`50–100 mg in 50 mL · bolus 2.5–5 mg`) : '—';
+   return `<h4 class="subh">PCA (dilute in 0.9% saline)</h4>
+   <table class="mini"><thead><tr><th>Drug</th><th>Weight</th><th>Make up</th></tr></thead><tbody>
+    <tr><th>Morphine</th><td>&lt;30 kg: 1 mg/kg/50 mL<br>30–50 kg: 2 mg/kg/100 mL<br>&gt;50 kg: 100 mg/100 mL</td><td>${kg?mor:'enter weight'}<br><small>background 0.2–1 mL/h</small></td></tr>
+    <tr><th>Fentanyl</th><td>&lt;50 kg: 15 or 25 mcg/kg/50 mL<br>&gt;50 kg: 750 or 1250 mcg/50 mL</td><td>${kg?fen:'enter weight'}</td></tr>
+    <tr><th>Ketamine <small>(add to opioid PCA)</small></th><td>&lt;50 kg: 1–2 mg/kg<br>&gt;50 kg: 50–100 mg</td><td>${ket}<br><small>background set by opioid rate</small></td></tr>
+   </tbody></table>
+   <p class="hint">PCA needs a PRN antiemetic (see Anti-emetics) and consider a stool softener.</p>`;
+ }},
+
+{id:'agents', title:'Anaesthetic & sedative agents', pill:'Induction · mixed', c:'neu',
+ note:'Items badged UNVERIFIED are not in the RXH guide — drafted from standard references; check before use.',
+ drugs:[
+  {c:'neu', name:'Propofol', note:'IV induction', perKg:2, hi:4, unit:'mg', unv:true, rxh:'standard induction range'},
+  {c:'neu', name:'Thiopentone', note:'IV induction', perKg:3, hi:5, unit:'mg', unv:true, rxh:'—'},
+  {c:'neu', name:'Ketamine', note:'IV induction', perKg:1, hi:2, unit:'mg', rxh:'also TIVA bolus (see Infusions)'},
+  {c:'neu', name:'Etomidate', note:'IV induction', perKg:0.3, unit:'mg', unv:true, rxh:'—'},
+  {c:'neu', name:'Midazolam', note:'IV sedation', perKg:0.05, hi:0.1, unit:'mg', unv:true, rxh:'titrate'},
+  {c:'neu', name:'Dexmedetomidine', note:'IV bolus', perKg:1, unit:'mcg', rxh:'intranasal 3–4 mcg/kg (emergence delirium)'},
+  {c:'neu', name:'Propofol — emergence delirium', note:'IV', perKg:1, unit:'mg', rxh:'PAED score &gt;10–12 · rule out pain/hypoxia first'},
+  {c:'neu', name:'Clonidine — emergence delirium', note:'IV', perKg:0.5, hi:1, unit:'mcg', rxh:'—'},
+ ]},
+
+{id:'nmb', title:'Muscle relaxants & reversal', pill:'NMB · RXH reversal', c:'air',
+ note:'Reversal doses and the Red Cross mix are from the RXH guide. Relaxant intubating doses and sugammadex are UNVERIFIED (not in the RXH guide).',
+ drugs:[
+  {c:'air', name:'Suxamethonium', note:'IV (IM 4 mg/kg if no access)', perKg:1.5, unit:'mg', rxh:'from emergency list'},
+  {c:'air', name:'Rocuronium — RSI', note:'IV', perKg:1.2, unit:'mg', rxh:'from emergency list'},
+  {c:'air', name:'Rocuronium — routine', note:'IV', perKg:0.6, unit:'mg', unv:true, rxh:'—'},
+  {c:'air', name:'Atracurium', note:'IV', perKg:0.5, unit:'mg', unv:true, rxh:'—'},
+  {c:'air', name:'Cisatracurium', note:'IV', perKg:0.15, unit:'mg', unv:true, rxh:'—'},
+  {c:'air', name:'Vecuronium', note:'IV', perKg:0.1, unit:'mg', unv:true, rxh:'—'},
+  {c:'air', name:'Sugammadex', note:'IV · routine reversal', perKg:2, unit:'mg', unv:true, rxh:'deeper block: 4 mg/kg'},
+  {c:'air', name:'Neostigmine', note:'IV reversal', perKg:0.05, unit:'mg', rxh:'with glycopyrrolate or atropine'},
+  {c:'air', name:'Glycopyrrolate', note:'IV with neostigmine', perKg:0.01, unit:'mg', rxh:'—'},
+  {c:'air', name:'Atropine', note:'IV alternative to glycopyrrolate', perKg:0.02, unit:'mg', rxh:'—'},
+  {c:'air', name:'Red Cross reversal mix', note:'neostigmine 2.5 mg + glycopyrrolate 0.4 mg, made up to 5 mL with N.Saline',
+   guide:'1 mL per 10 kg · 0.1 mL/kg if &lt;10 kg',
+   live:(w)=>{ if(!w) return null; const v = w.kg<10 ? 0.1*w.kg : w.kg/10;
+     return {result:`${fmtNum(v)} mL`, working: w.kg<10?`0.1 mL/kg × ${w.kg} kg`:`${w.kg} kg ÷ 10`}; }, rxh:'—'},
+ ]},
+
+{id:'la', title:'Local anaesthetics & regional', pill:'Regional · RXH', c:'met',
+ note:'Maximum toxic doses below are UNVERIFIED (not in the RXH guide). Treat LAST per the Metabolic emergency pathway.',
+ drugs:[
+  {c:'met', name:'Caudal 0.25% bupivacaine — sacro-lumbar', note:'volume', perKg:0.5, unit:'mL', rxh:'1 mcg/kg clonidine may be added'},
+  {c:'met', name:'Caudal 0.25% bupivacaine — upper abdominal', note:'volume', perKg:1, unit:'mL', rxh:'1 mcg/kg clonidine may be added'},
+  {c:'met', name:'Caudal 0.25% bupivacaine — mid-thoracic', note:'volume', perKg:1.2, unit:'mL', rxh:'mid-thoracic level not reliably achieved'},
+  {c:'met', name:'Epidural bolus 0.25% bupivacaine — thoracic', note:'volume', perKg:0.5, unit:'mL', rxh:'or 0.5–1 mL per dermatome (check toxic dose)'},
+  {c:'met', name:'Epidural bolus 0.25% bupivacaine — lumbar', note:'volume', perKg:0.75, unit:'mL', rxh:'or 0.5–1 mL per dermatome (check toxic dose)'},
+  {c:'met', name:'Epidural infusion 0.1% bupivacaine', note:'mL/h', guide:'&gt;6 mo and &gt;5 kg: 0.1–0.4 mL/kg/h<br>&lt;6 mo or &lt;5 kg: 0.1–0.2 mL/kg/h',
+   live:(w)=>{ if(!w) return null; const small = w.kg<5 || (ageM()!=null && ageM()<6); const hi=small?0.2:0.4;
+     return {result:`${fmtNum(0.1*w.kg)}–${fmtNum(hi*w.kg)} mL/h`, working:`0.1–${hi} mL/kg/h × ${w.kg} kg`+(ageM()==null?' (age not entered)':'')}; },
+   rxh:'Epidural depth ≈ 1 mm/kg from skin · 3–4 cm in space'},
+  {c:'met', name:'Wound infusion catheter', note:'bupivacaine, 0.1–0.2 mL/kg/h', guide:'&lt;4 mo: 0.1% · &gt;4 mo: 0.2%',
+   live:(w)=>{ const m=ageM(); if(!w||m==null) return null;
+     return {result:`${m<4?'0.1':'0.2'}% · ${fmtNum(0.1*w.kg)}–${fmtNum(0.2*w.kg)} mL/h`, working:`0.1–0.2 mL/kg/h × ${w.kg} kg`}; }, rxh:'needs age'},
+  {c:'met', name:'Clysis — max volume', note:'bupivacaine 0.5% 10 mL + adrenaline 1:1000 1 mL; take 4.5 mL of mix into 200 mL N.Saline', perKg:20, unit:'mL', rxh:'max 20 mL/kg'},
+  {c:'met', name:'Bupivacaine / levobupivacaine / ropivacaine', note:'maximum dose', perKg:2.5, unit:'mg', unv:true, rxh:'0.25% = 2.5 mg/mL · 0.5% = 5 mg/mL'},
+  {c:'met', name:'Lignocaine — maximum', note:'plain', perKg:3, unit:'mg', unv:true, rxh:'with adrenaline ≈ 7 mg/kg · 1% = 10 mg/mL'},
+ ]},
+
+{id:'anticonv', title:'Anticonvulsants', pill:'Seizures · unverified', c:'neu',
+ note:'<b>None of these are in the RXH guide.</b> All doses are UNVERIFIED drafts from standard paediatric (APLS-type) references — verify against the SAMF before use. Secure airway, check glucose, give 100% O₂.',
+ drugs:[
+  {c:'neu', name:'Midazolam', note:'IV/IO first line', perKg:0.1, unit:'mg', max:5, unv:true, rxh:'repeat once if needed'},
+  {c:'neu', name:'Lorazepam', note:'IV/IO', perKg:0.1, unit:'mg', max:4, unv:true, rxh:'—'},
+  {c:'neu', name:'Levetiracetam', note:'IV second line', perKg:40, unit:'mg', max:3000, unv:true, rxh:'over 5–15 min'},
+  {c:'neu', name:'Phenytoin', note:'IV second line', perKg:20, unit:'mg', unv:true, rxh:'over ≥20 min with ECG monitoring'},
+  {c:'neu', name:'Phenobarbitone', note:'IV (neonates / alternative)', perKg:20, unit:'mg', unv:true, rxh:'over 20 min'},
+ ]},
+
+{id:'infusions', title:'Infusions (make-up & rates)', pill:'Infusions · RXH', c:'cir',
+ note:'Standard syringe: drug in 50 mL N.Saline unless stated. Rates are for the entered weight.',
+ drugs:[
+  {c:'cir', name:'Adrenaline', note:'60 mcg/kg in 50 mL · 1 mL/h = 0.02 mcg/kg/min', guide:'60 mcg/kg in 50 mL',
+   live:(w)=>w&&{result:`${fmtNum(60*w.kg)} mcg in 50 mL`, working:`60 mcg × ${w.kg} kg`}, rxh:'1 mL/h = 0.02 mcg/kg/min'},
+  {c:'cir', name:'Noradrenaline', note:'60 mcg/kg in 50 mL · 1 mL/h = 0.02 mcg/kg/min', guide:'60 mcg/kg in 50 mL',
+   live:(w)=>w&&{result:`${fmtNum(60*w.kg)} mcg in 50 mL`, working:`60 mcg × ${w.kg} kg`}, rxh:'1 mL/h = 0.02 mcg/kg/min'},
+  {c:'cir', name:'Milrinone', note:'1.5 mg/kg in 50 mL · 1 mL/h = 0.5 mcg/kg/min', guide:'1.5 mg/kg in 50 mL',
+   live:(w)=>w&&{result:`${fmtNum(1.5*w.kg)} mg in 50 mL`, working:`1.5 mg × ${w.kg} kg`}, rxh:'range 0.25–0.75 mcg/kg/min'},
+  {c:'neu', name:'Dexmedetomidine', note:'10 mcg/kg in 50 mL · 1 mL/h = 0.2 mcg/kg/h', guide:'10 mcg/kg in 50 mL · bolus 1 mcg/kg',
+   live:(w)=>w&&{result:`${fmtNum(10*w.kg)} mcg in 50 mL`, working:`10 mcg × ${w.kg} kg · bolus ${fmtNum(w.kg)} mcg`}, rxh:'range 0.2–1.5 mcg/kg/h (1–7.5 mL/h)'},
+  {c:'cir', name:'Remifentanil', note:'10 mcg/mL · rate = weight × 0.6 mL/h = 0.1 mcg/kg/min', guide:'10 mcg/mL',
+   live:(w)=>w&&{result:`${fmtNum(0.6*w.kg)}–${fmtNum(1.8*w.kg)} mL/h`, working:`0.1–0.3 mcg/kg/min · 0.6 × ${w.kg} kg per 0.1`}, rxh:'range 0.1–0.3 mcg/kg/min'},
+  {c:'cir', name:'Sufentanil', note:'1 mcg/mL (10 mL of 5 mcg/mL to 50 mL)', guide:'&lt;20 kg: 10 mL/h · &gt;20 kg: 20 mL/h',
+   live:(w)=>w&&{result:`${w.kg<20?10:20} mL/h`, working:`${w.kg<20?'<20':'≥20'} kg`}, rxh:'stop 20 min before end'},
+  {c:'neu', name:'Ketamine TIVA', note:'200 mg in 50 mL = 4 mg/mL (consider 8 mg/mL for big kids / long cases)',
+   guide:'induction 1–2 mg/kg · 12 mg/kg/h ×20 min · 8 mg/kg/h ×20 min · 4 mg/kg/h thereafter',
+   live:(w)=>w&&{result:`bolus ${fmtNum(w.kg)}–${fmtNum(2*w.kg)} mg · ${fmtNum(3*w.kg)} → ${fmtNum(2*w.kg)} → ${fmtNum(w.kg)} mL/h`,
+     working:`at 4 mg/mL: 12/8/4 mg/kg/h ÷ 4 × ${w.kg} kg`}, rxh:'20 min, 20 min, then remainder'},
+ ]},
+
+{id:'other', title:'Antibiotics & fluids', pill:'RXH', c:'acc',
+ drugs:[
+  {c:'acc', name:'Cefazolin', note:'IV prophylaxis', perKg:50, unit:'mg', rxh:'—'},
+  {c:'acc', name:'Metronidazole', note:'IV prophylaxis', perKg:15, unit:'mg', rxh:'—'},
+  {c:'acc', name:'Fluid bolus', note:'crystalloid', perKg:5, unit:'mL', rxh:'titrate to 20 mL/kg max · urine 0.5–1 mL/kg/h'},
+  {c:'acc', name:'Maintenance fluid (4:2:1)', note:'4 mL/kg/h first 10 kg, 2 mL/kg/h next 10 kg, 1 mL/kg/h thereafter', guide:'4:2:1 rule',
+   live:(w)=>{ if(!w) return null; const k=w.kg; const r = k<=10?4*k : k<=20?40+2*(k-10) : 60+(k-20);
+     return {result:`${fmtNum(r)} mL/h`, working:`4:2:1 for ${k} kg`}; }, rxh:'—'},
+ ]},
+];
+
+/* ---- table renderer ---- */
+function renderDrugTable(list, opts={}){
   const w = estimateWeight();
-  let rows = DRUGS.map(d=>{
+  const doseHead = opts.doseHead || 'Dose (APA/DAS/RCUK)';
+  const notesHead = opts.notesHead || 'RXH if different';
+  const rows = list.map(d=>{
     let liveCell;
-    if(d.adenosine){
+    if(d.live){
+      const r = d.live(w);
+      liveCell = r ? `<td class="live" data-label="For this patient">${r.result}<span class="w">${r.working}</span></td>`
+                   : `<td class="live noval" data-label="For this patient">${w?'enter age':'—'}</td>`;
+    }
+    else if(d.adenosine){
       if(!w){ liveCell = `<td class="live noval" data-label="For this patient">—</td>`; }
       else {
         const mg = (perKg,max)=>{ let v=perKg*w.kg; if(v>max)v=max; return fmtNum(v/1000)+' mg'; };
@@ -109,29 +301,43 @@ function renderDrugTable(){
       const c = calcDose(d);
       liveCell = `<td class="live" data-label="For this patient">${c.result}<span class="w">${c.working}</span></td>`;
     }
-    const guideCell = d.adenosine ? '100 / 200 / 300 mcg/kg<br><small style="color:var(--muted)">max 6 / 12 / 12 mg</small>'
+    const guideCell = d.guide ? d.guide
+      : d.adenosine ? '100 / 200 / 300 mcg/kg<br><small style="color:var(--muted)">max 6 / 12 / 12 mg</small>'
       : d.anaphAdren ? 'IM (1:1000): &lt;6yr 150mcg · 6–12yr 300mcg · &gt;12yr 500mcg'
       : (d.special?d.special:(d.hi!=null?d.perKg+'–'+d.hi:d.perKg)+' '+d.unit+'/kg'+(d.max?'<br><small style="color:var(--muted)">max '+d.max+' '+d.unit+'</small>':''));
     const rxhCls = d.same ? 'rxh same' : 'rxh';
-    return `<tr>
-      <th><span class="classdot cd-${d.c}"></span>${d.name}<small>${d.note}</small></th>
-      <td data-label="Dose (APA/DAS/RCUK)">${guideCell}</td>
-      <td class="${rxhCls}" data-label="RXH if different">${d.rxh||'—'}</td>
+    const badge = d.unv ? ' <span class="unv" title="Not in the RXH guide — verify against the SAMF">UNVERIFIED</span>' : '';
+    return `<tr${d.unv?' class="unvrow"':''}>
+      <th><span class="classdot cd-${d.c}"></span>${d.name}${badge}<small>${d.note||''}</small></th>
+      <td data-label="${doseHead}">${guideCell}</td>
+      <td class="${rxhCls}" data-label="${notesHead}">${d.rxh||'—'}</td>
       ${liveCell}
     </tr>`;
   }).join('');
   return `<div class="drugwrap"><table class="drugs">
     <thead><tr>
-      <th>Drug / indication</th><th>Dose (APA/DAS/RCUK)</th><th>RXH if different</th>
+      <th>Drug / indication</th><th>${doseHead}</th><th>${notesHead}</th>
       <th>For this patient${w?' ('+w.kg+' kg)':''}</th>
-    </tr></thead><tbody>${rows}</tbody></table></div>
-    <p class="hint">Live column computes exact dose from the active weight and shows the arithmetic. Age-band drugs (anaphylaxis adrenaline) are not weight-linear — dose by the stated band.</p>`;
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function renderEmergTable(){
+  return renderDrugTable(EMERG) + `<p class="hint">Live column computes exact dose from the active weight and shows the arithmetic. Age-band drugs (anaphylaxis adrenaline) are not weight-linear — dose by the stated band.</p>`;
+}
+function renderGroup(g){
+  const unv = g.drugs.some(d=>d.unv);
+  return (g.note?`<span class="flag" style="margin:6px 0 10px;">${g.note}</span>`:'')
+    + renderDrugTable(g.drugs,{doseHead:'Dose', notesHead:'Notes / timing'})
+    + (g.extra?g.extra():'')
+    + `<p class="hint">Source: RXH Paediatric Anaesthesia Quick Reference Guide (2023 v3)${unv?'; drugs badged <span class="unv">UNVERIFIED</span> are not in that guide':''}. Always verify against the SAMF.</p>`;
 }
 
 /* ---- page sections ---- */
-function ALGOS(){ return [
+function ALGOS(){
+  const groups = GROUPS.map(g=>({id:g.id, group:'Drug groups', c:g.c, title:g.title, pill:g.pill,
+    type:'custom', html:()=>renderGroup(g)}));
+  return groups.concat([
   {id:'alldrugs', group:'Reference', c:'acc', title:'All Emergency Drugs (live table)', pill:'Reference',
-   type:'custom', html:()=>renderDrugTable()},
+   type:'custom', html:()=>renderEmergTable()},
   {id:'ett', group:'Reference', c:'acc', title:'ETT · Vitals · Cardioversion', pill:'Reference',
    type:'custom', html:()=>{
      const s=ettSize(), l=ettLength();
@@ -151,15 +357,17 @@ function ALGOS(){ return [
      <h4 style="margin:14px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);">Normal vital signs</h4>
      ${renderVitals()}`;
    }},
-]; }
+]);
+}
 
 MEPA.init({
   algos: ALGOS,
   ntsGroups: [],          // a drug reference doesn't need NTS/NAP4 blocks
   nap4Groups: [],
-  autoOpenFirst: true,    // open the drug table straight away
+  autoOpenFirst: false,
+  groupOrder: ['Drug groups','Reference'],
   emptyTitle: 'Drug reference',
-  emptyBody: 'Select a section on the left.'
+  emptyBody: 'Pick a drug group. Doses are calculated live for the entered weight.'
 });
 </script>
 </body>
