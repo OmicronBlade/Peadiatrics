@@ -45,15 +45,23 @@ function fmtNum(n){
   if(n>=10)  return (Math.round(n*10)/10).toString();
   return (Math.round(n*100)/100).toString();
 }
-/* ---- dosing weight (paedspro-style) ----
-   TBW = actual/estimated weight. If an IBW is entered (and is below TBW):
-   IBW = entered value, AdjBW = IBW + 0.35 × (TBW − IBW).
-   With no IBW entered every basis falls back to TBW.            */
+/* ---- dosing weight (SOBA / paedspro style) ----
+   TBW = actual/estimated weight. When an IBW is entered AND TBW is more than
+   110% of IBW, IBW-basis drugs use IBW and AdjBW-basis drugs use
+   AdjBW = IBW + 0.35 × (TBW − IBW). Otherwise everything uses TBW.
+   (110% of IBW is a pragmatic trigger — SOBA/paedspro define obesity by
+   BMI centile ≥98th; confirm the trigger against local policy.)          */
+const OBESE_RATIO = 1.10;
+function obesityActive(){
+  const w = estimateWeight();
+  return !!(w && S.ibw && S.ibw>0 && w.kg > OBESE_RATIO*S.ibw);
+}
 function dosingWeight(basis){
   const w = estimateWeight(); if(!w) return null;
-  const ibw = (S.ibw && S.ibw>0 && S.ibw<w.kg) ? S.ibw : null;
-  if(basis==='IBW' && ibw)   return {kg:ibw, source:'IBW', label:'IBW'};
-  if(basis==='AdjBW' && ibw) return {kg:Math.round((ibw+0.35*(w.kg-ibw))*10)/10, source:'AdjBW', label:'AdjBW'};
+  if(obesityActive()){
+    if(basis==='IBW')   return {kg:S.ibw, source:'IBW', label:'IBW'};
+    if(basis==='AdjBW') return {kg:Math.round((S.ibw+0.35*(w.kg-S.ibw))*10)/10, source:'AdjBW', label:'AdjBW'};
+  }
   return {kg:w.kg, source:w.source, label:'TBW'};
 }
 function calcDose(d){

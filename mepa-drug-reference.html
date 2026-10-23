@@ -117,12 +117,13 @@ const L = (perKg,hi,unit,basis,per)=>(w0)=>{
 const GROUPS = [
 
 {id:'premed', title:'Premeds & apnoea prevention', pill:'Pre-op', c:'neu',
- note:'Fasting: solids &gt;6 h · breast milk &gt;4 h · clear fluid &gt;1 h pre-op. Apnoea monitoring 12 h post-op (term &lt;50 wk PCA · premature &lt;60 wk PCA).',
+ note:'Fasting: solids &gt;6 h · breast milk &gt;4 h · clear fluid &gt;1 h pre-op. Apnoea monitoring 12 h post-op (term &lt;50 wk PCA · premature &lt;60 wk PCA). <b>Reduce doses if combining premedications.</b>',
  drugs:[
   {c:'neu', name:'Clonidine', note:'PO premed', perKg:3, hi:4, unit:'mcg', basis:'TBW', rxh:'90 min pre-op', pp:'1–5 mcg/kg (TBW)'},
-  {c:'neu', name:'Midazolam', note:'PO premed', perKg:0.2, hi:0.3, unit:'mg', max:7.5, basis:'TBW', rxh:'30 min pre-op, “on trolley” · max 7.5 mg', pp:'0.5 mg/kg (TBW)'},
-  {c:'neu', name:'Ketamine', note:'PO premed', perKg:5, hi:10, unit:'mg', basis:'IBW', src:'pp', rxh:'—'},
-  {c:'neu', name:'Dexmedetomidine', note:'intranasal premed', perKg:2, hi:3, unit:'mcg', basis:'AdjBW', src:'pp', rxh:'RXH: 3–4 mcg/kg intranasal (emergence delirium)'},
+  {c:'neu', name:'Midazolam', note:'PO premed', perKg:0.2, hi:0.3, unit:'mg', max:7.5, basis:'TBW', rxh:'30 min pre-op, “on trolley” · max 7.5 mg · OSA: airway-obstruction risk, severe OSA ↓ to 0.25 mg/kg', pp:'0.5 mg/kg PO, max 20 mg (15–30 min) · buccal 0.3 mg/kg, max 10 mg (10–15 min) (TBW)'},
+  {c:'neu', name:'Ketamine', note:'PO premed', perKg:5, hi:10, unit:'mg', basis:'IBW', src:'pp', rxh:'10–20 min pre-op'},
+  {c:'neu', name:'Ketamine', note:'IM premed', perKg:5, unit:'mg', basis:'IBW', src:'pp', rxh:'3–5 min pre-op'},
+  {c:'neu', name:'Dexmedetomidine', note:'intranasal premed', perKg:2, hi:3, unit:'mcg', max:150, basis:'AdjBW', src:'pp', rxh:'30–60 min pre-op · max 150 mcg · RXH: 3–4 mcg/kg intranasal (emergence delirium)'},
   {c:'neu', name:'Caffeine citrate', note:'PO · premature &lt;60 wk PCA', perKg:20, unit:'mg', rxh:'2 h pre-op; then 5–10 mg/kg daily PO ×48 h post-op. (Anhydrous caffeine: 10 mg/kg, then 5 mg/kg OD)'},
   {c:'neu', name:'Aminophylline', note:'IV slowly, intra-op · premature', perKg:5, hi:10, unit:'mg', rxh:'apnoea prevention'},
  ]},
@@ -143,11 +144,11 @@ const GROUPS = [
   {c:'cir', name:'Paracetamol', note:'IV', perKg:15, unit:'mg', basis:'AdjBW', rxh:'loading dose 20 mg/kg'},
   {c:'cir', name:'Diclofenac*', note:'PR (paedspro: IV/PO)', perKg:1, unit:'mg', basis:'AdjBW', rxh:'contraindicated &lt;1 yr'},
   {c:'cir', name:'Parecoxib*', note:'IV', perKg:1, unit:'mg', max:40, rxh:'max 40 mg · contraindicated &lt;1 yr'},
-  {c:'cir', name:'Ketamine', note:'IV', perKg:0.25, hi:0.5, unit:'mg', rxh:'—'},
+  {c:'cir', name:'Ketamine', note:'IV', perKg:0.25, hi:0.5, unit:'mg', basis:'IBW', rxh:'—'},
   {c:'cir', name:'Clonidine', note:'IV', perKg:1, hi:2, unit:'mcg', rxh:'—'},
   {c:'cir', name:'Fentanyl', note:'IV', perKg:1, hi:2, unit:'mcg', basis:'AdjBW', rxh:'same in both guides'},
   {c:'cir', name:'Morphine', note:'IV', perKg:0.1, unit:'mg', basis:'IBW', rxh:'—', pp:'0.05–0.1 mg/kg (IBW)'},
-  {c:'cir', name:'Morphine', note:'IM', perKg:0.1, unit:'mg', basis:'AdjBW', src:'pp', rxh:'—'},
+  {c:'cir', name:'Morphine', note:'IM', perKg:0.1, unit:'mg', basis:'IBW', src:'pp', rxh:'SOBA: IBW · paedspro app uses AdjBW'},
   {c:'cir', name:'Alfentanil', note:'IV', perKg:10, unit:'mcg', basis:'AdjBW', rxh:'—', pp:'10–20 mcg/kg (AdjBW)'},
  ]},
 
@@ -214,13 +215,13 @@ const GROUPS = [
   {c:'air', name:'Suxamethonium', note:'IM (if no access)', perKg:4, unit:'mg', basis:'TBW', src:'pp', rxh:'—'},
   {c:'air', name:'Rocuronium', note:'IV routine', perKg:0.6, hi:1, unit:'mg', basis:'IBW', src:'pp', rxh:'RSI 1.2 mg/kg (emergency list)'},
   {c:'air', name:'Atracurium', note:'IV', perKg:0.5, unit:'mg', basis:'IBW', src:'pp', rxh:'—'},
-  {c:'air', name:'Cisatracurium', note:'IV', perKg:0.15, unit:'mg', unv:true, rxh:'—'},
-  {c:'air', name:'Vecuronium', note:'IV', perKg:0.1, unit:'mg', unv:true, rxh:'—'},
+  {c:'air', name:'Cisatracurium', note:'IV', perKg:0.15, unit:'mg', basis:'IBW', unv:true, rxh:'—'},
+  {c:'air', name:'Vecuronium', note:'IV', perKg:0.1, unit:'mg', basis:'IBW', unv:true, rxh:'—'},
   {c:'air', name:'Sugammadex', note:'IV · routine (2 mg/kg)', perKg:2, unit:'mg', basis:'TBW', src:'pp', rxh:'—'},
   {c:'air', name:'Sugammadex', note:'IV · immediate reversal (16 mg/kg)', perKg:16, unit:'mg', basis:'TBW', src:'pp', rxh:'—'},
   {c:'air', name:'Neostigmine', note:'IV reversal', perKg:0.05, unit:'mg', basis:'TBW', rxh:'with glycopyrrolate or atropine · same in both guides'},
-  {c:'air', name:'Glycopyrrolate', note:'IV with neostigmine', perKg:0.01, unit:'mg', rxh:'—'},
-  {c:'air', name:'Atropine', note:'IV alternative to glycopyrrolate', perKg:0.02, unit:'mg', rxh:'—'},
+  {c:'air', name:'Glycopyrrolate', note:'IV with neostigmine', perKg:0.01, unit:'mg', basis:'TBW', rxh:'—'},
+  {c:'air', name:'Atropine', note:'IV alternative to glycopyrrolate', perKg:0.02, unit:'mg', basis:'TBW', rxh:'—'},
   {c:'air', name:'Red Cross reversal mix', note:'neostigmine 2.5 mg + glycopyrrolate 0.4 mg, made up to 5 mL with N.Saline',
    guide:'1 mL per 10 kg · 0.1 mL/kg if &lt;10 kg',
    live:(w)=>{ if(!w) return null; const v = w.kg<10 ? 0.1*w.kg : w.kg/10;
@@ -250,12 +251,12 @@ const GROUPS = [
  ]},
 
 {id:'anticonv', title:'Anticonvulsants', pill:'Seizures', c:'neu',
- note:'Lorazepam, midazolam and diazepam are from paedspro. Levetiracetam, phenytoin and phenobarbitone are <span class="unv">UNVERIFIED</span> (standard references). Secure airway, check glucose, give 100% O₂.',
+ note:'Lorazepam and diazepam: BNFC doses as shown in paedspro (use unadjusted TBW). Phenytoin and phenobarbitone are <span class="unv">UNVERIFIED</span>. Secure airway, check glucose, give 100% O₂.',
  drugs:[
-  {c:'neu', name:'Lorazepam', note:'IV loading', perKg:0.1, unit:'mg', max:4, basis:'TBW', src:'pp', rxh:'cap 4 mg inferred from paedspro (4.0 mg at 40 kg)'},
+  {c:'neu', name:'Lorazepam', note:'IV loading · 1 mo–11 yr · into a large vein', perKg:0.1, unit:'mg', max:4, basis:'TBW', src:'pp', rxh:'repeat once after 10 min (max 4 mg/dose) · ≥12 yr: 4 mg, repeat once after 10 min'},
   {c:'neu', name:'Midazolam', note:'IV loading', perKg:0.05, hi:0.1, unit:'mg', basis:'TBW', src:'pp', rxh:'—'},
-  {c:'neu', name:'Diazepam', note:'IV', perKg:0.3, unit:'mg', max:10, basis:'TBW', src:'pp', rxh:'cap 10 mg inferred from paedspro (10 mg shown at 40 kg)'},
-  {c:'neu', name:'Levetiracetam', note:'IV loading', perKg:40, unit:'mg', max:3000, unv:true, rxh:'paedspro lists it (285 mg at 40 kg / AdjBW 28.5 kg; basis not visible) — confirm'},
+  {c:'neu', name:'Diazepam', note:'IV · 1 mo–11 yr · over 3–5 min', perKg:0.3, hi:0.4, unit:'mg', max:10, basis:'TBW', src:'pp', rxh:'repeat after 10 min if required (max 10 mg/dose) · ≥12 yr: 10 mg'},
+  {c:'neu', name:'Levetiracetam', note:'IV · status epilepticus 2nd line (loading)', perKg:40, unit:'mg', basis:'AdjBW', src:'pp', rxh:'⚠ paedspro’s 10 mg/kg “loading” figure is the BNFc <b>adjunctive</b> dose, NOT status epilepticus. SE loading = 40 mg/kg (APLS / EcLiPSE) — take the maximum and infusion rate from your local SE guideline'},
   {c:'neu', name:'Phenytoin', note:'IV second line', perKg:20, unit:'mg', unv:true, rxh:'over ≥20 min with ECG monitoring'},
   {c:'neu', name:'Phenobarbitone', note:'IV (neonates / alternative)', perKg:20, unit:'mg', unv:true, rxh:'over 20 min'},
  ]},
@@ -263,16 +264,16 @@ const GROUPS = [
 {id:'infusions', title:'Infusions (make-up & rates)', pill:'Infusions', c:'cir',
  note:'Standard syringe: drug in 50 mL N.Saline unless stated. Rates are for the entered weight.',
  drugs:[
-  {c:'cir', name:'Adrenaline', note:'60 mcg/kg in 50 mL · 1 mL/h = 0.02 mcg/kg/min', guide:'60 mcg/kg in 50 mL',
-   live:(w)=>w&&{result:`${fmtNum(60*w.kg)} mcg in 50 mL`, working:`60 mcg × ${w.kg} kg`}, rxh:'1 mL/h = 0.02 mcg/kg/min'},
+  {c:'cir', name:'Adrenaline', note:'60 mcg/kg in 50 mL · 1 mL/h = 0.02 mcg/kg/min', guide:'60 mcg/kg in 50 mL', basis:'IBW',
+   live:(w0)=>{const w=dosingWeight('IBW'); return w&&{result:`${fmtNum(60*w.kg)} mcg in 50 mL`, working:`60 mcg × ${w.kg} kg (${w.label})`};}, rxh:'1 mL/h = 0.02 mcg/kg/min'},
   {c:'cir', name:'Noradrenaline', note:'60 mcg/kg in 50 mL · 1 mL/h = 0.02 mcg/kg/min', guide:'60 mcg/kg in 50 mL',
    live:(w)=>w&&{result:`${fmtNum(60*w.kg)} mcg in 50 mL`, working:`60 mcg × ${w.kg} kg`}, rxh:'1 mL/h = 0.02 mcg/kg/min'},
   {c:'cir', name:'Milrinone', note:'1.5 mg/kg in 50 mL · 1 mL/h = 0.5 mcg/kg/min', guide:'1.5 mg/kg in 50 mL',
    live:(w)=>w&&{result:`${fmtNum(1.5*w.kg)} mg in 50 mL`, working:`1.5 mg × ${w.kg} kg`}, rxh:'range 0.25–0.75 mcg/kg/min'},
   {c:'neu', name:'Dexmedetomidine', note:'10 mcg/kg in 50 mL · 1 mL/h = 0.2 mcg/kg/h', guide:'10 mcg/kg in 50 mL · bolus 1 mcg/kg',
    live:(w)=>w&&{result:`${fmtNum(10*w.kg)} mcg in 50 mL`, working:`10 mcg × ${w.kg} kg · bolus ${fmtNum(w.kg)} mcg`}, rxh:'range 0.2–1.5 mcg/kg/h (1–7.5 mL/h)', pp:'0.2 mcg/kg/h (IBW)'},
-  {c:'cir', name:'Remifentanil', note:'10 mcg/mL · rate = weight × 0.6 mL/h = 0.1 mcg/kg/min', guide:'10 mcg/mL',
-   live:(w)=>w&&{result:`${fmtNum(0.6*w.kg)}–${fmtNum(1.8*w.kg)} mL/h`, working:`0.1–0.3 mcg/kg/min · 0.6 × ${w.kg} kg per 0.1`}, rxh:'range 0.1–0.3 mcg/kg/min'},
+  {c:'cir', name:'Remifentanil', note:'10 mcg/mL · rate = weight × 0.6 mL/h = 0.1 mcg/kg/min', guide:'10 mcg/mL', basis:'AdjBW',
+   live:(w0)=>{const w=dosingWeight('AdjBW'); return w&&{result:`${fmtNum(0.6*w.kg)}–${fmtNum(1.8*w.kg)} mL/h`, working:`0.1–0.3 mcg/kg/min · 0.6 × ${w.kg} kg (${w.label}) per 0.1`};}, rxh:'range 0.1–0.3 mcg/kg/min'},
   {c:'cir', name:'Sufentanil', note:'1 mcg/mL (10 mL of 5 mcg/mL to 50 mL)', guide:'&lt;20 kg: 10 mL/h · &gt;20 kg: 20 mL/h',
    live:(w)=>w&&{result:`${w.kg<20?10:20} mL/h`, working:`${w.kg<20?'<20':'≥20'} kg`}, rxh:'stop 20 min before end'},
   {c:'neu', name:'Ketamine TIVA', note:'200 mg in 50 mL = 4 mg/mL (consider 8 mg/mL for big kids / long cases)',
@@ -283,7 +284,7 @@ const GROUPS = [
 
 {id:'other', title:'Antibiotics & fluids', pill:'RXH', c:'acc',
  drugs:[
-  {c:'acc', name:'Cefazolin', note:'IV prophylaxis', perKg:50, unit:'mg', rxh:'—'},
+  {c:'acc', name:'Cefazolin', note:'IV prophylaxis', perKg:50, unit:'mg', basis:'TBW', rxh:'—'},
   {c:'acc', name:'Metronidazole', note:'IV prophylaxis', perKg:15, unit:'mg', rxh:'—'},
   {c:'acc', name:'Fluid bolus', note:'crystalloid', perKg:5, unit:'mL', rxh:'titrate to 20 mL/kg max · urine 0.5–1 mL/kg/h'},
   {c:'acc', name:'Maintenance fluid (4:2:1)', note:'4 mL/kg/h first 10 kg, 2 mL/kg/h next 10 kg, 1 mL/kg/h thereafter', guide:'4:2:1 rule',
@@ -348,6 +349,32 @@ function renderDrugTable(list, opts={}){
       <th>For this patient${w?' ('+w.kg+' kg)':''}</th>
     </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
+function renderSoba(){
+  const w=estimateWeight(), act=obesityActive();
+  const A=dosingWeight('AdjBW'), I=dosingWeight('IBW');
+  const card=(t,v,n)=>`<div class="refcard"><h4>${t}</h4><div class="big">${v!=null?v+' <small>kg</small>':'—'}</div><div class="note">${n}</div></div>`;
+  return `<div class="refgrid">
+    ${card('TBW (actual)', w?w.kg:null, w?w.source:'enter age / weight')}
+    ${card('IBW', S.ibw||null, S.ibw?'entered':'enter in the IBW box')}
+    ${card('AdjBW', act&&A?A.kg:null, 'IBW + 0.35 × (TBW − IBW)')}
+  </div>
+  <span class="flag" style="margin:8px 0;">${act?'Obesity dosing weights are <b>ACTIVE</b> (TBW &gt; 110% of IBW): IBW- and AdjBW-basis drugs use those weights.'
+    : (S.ibw?'TBW ≤ 110% of IBW — all drugs are using TBW.':'No IBW entered — all drugs are using TBW. Enter an IBW in the patient bar for children living with obesity.')}</span>
+  <h4 class="subh">Which weight for which drug</h4>
+  <table class="mini"><thead><tr><th>Basis</th><th>Drugs</th></tr></thead><tbody>
+   <tr><th>Total (TBW)</th><td>Atropine · glycopyrrolate · dexamethasone · ondansetron · suxamethonium · penicillins · cephalosporins · sugammadex · neostigmine · enoxaparin (also midazolam PO/buccal)</td></tr>
+   <tr><th>Ideal (IBW)</th><td>Propofol (induction bolus) · ketamine · morphine · non-depolarising muscle relaxants · dexmedetomidine (IV) · local anaesthetics · adrenaline · phenylephrine</td></tr>
+   <tr><th>Adjusted (AdjBW)</th><td>Propofol (TCI / infusion) · alfentanil · fentanyl · remifentanil (Minto) · dexmedetomidine (IN) · ibuprofen · gentamicin · paracetamol</td></tr>
+  </tbody></table>
+  <h4 class="subh">Defining obesity</h4>
+  <table class="mini"><thead><tr><th>BMI centile</th><th>Category</th><th>ASA</th></tr></thead><tbody>
+   <tr><td class="num">&gt;91st</td><td>Overweight</td><td class="num">2</td></tr>
+   <tr><td class="num">&gt;98th</td><td>Obese</td><td class="num">2</td></tr>
+   <tr><td class="num">&gt;99.6th</td><td>Severely obese</td><td class="num">3</td></tr>
+  </tbody></table>
+  <p class="hint">BMI = weight (kg) ÷ height (m)². IBW = BMI<sub>50</sub> × height² (BMI<sub>50</sub> = age- and sex-specific BMI at the 50th centile — RCPCH/UK-WHO charts or the paedspro app). AdjBW = IBW + 0.35 × (TBW − IBW). Do not exceed maximum adult doses. The ‘TBW &gt; 110% of IBW’ switch used here is a pragmatic trigger; SOBA/paedspro define obesity by BMI centile ≥98th.</p>
+  <p class="hint">Source: SOBA “Anaesthesia for children living with obesity” quick reference; NPPG “How should medicines be dosed in children who are obese?” (Apr 2021).</p>`;
+}
 function renderEmergTable(){
   return renderDrugTable(EMERG) + `<p class="hint">Live column computes exact dose from the active weight and shows the arithmetic. Age-band drugs (anaphylaxis adrenaline) are not weight-linear — dose by the stated band.</p>`;
 }
@@ -364,6 +391,8 @@ function ALGOS(){
   const groups = GROUPS.map(g=>({id:g.id, group:'Drug groups', c:g.c, title:g.title, pill:g.pill,
     type:'custom', html:()=>renderGroup(g)}));
   return groups.concat([
+  {id:'soba', group:'Reference', c:'acc', title:'Obesity & dosing weights (SOBA)', pill:'Reference',
+   type:'custom', html:()=>renderSoba()},
   {id:'alldrugs', group:'Reference', c:'acc', title:'All Emergency Drugs (live table)', pill:'Reference',
    type:'custom', html:()=>renderEmergTable()},
   {id:'ett', group:'Reference', c:'acc', title:'ETT · Vitals · Cardioversion', pill:'Reference',
@@ -404,7 +433,7 @@ MEPA.init({
   function sync(){
     const v=parseFloat(el.value); S.ibw=(!isNaN(v)&&v>0)?v:null;
     const a=dosingWeight('AdjBW');
-    lbl.textContent = (S.ibw && a && a.label==='AdjBW') ? 'kg · AdjBW '+a.kg : 'kg';
+    lbl.textContent = !S.ibw ? 'kg' : (obesityActive() && a ? 'kg · AdjBW '+a.kg : 'kg · TBW ≤110% → TBW');
     MEPA.render();
   }
   el.addEventListener('input',sync);
