@@ -3,29 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MEPA / SIMPACT — Paediatric Anaesthesia Emergency Card</title>
+<title>Emergency Card — Paediatric Anaesthesia</title>
 <style>
   :root{
-    --ink:#12161c;
+    --ink:#2e3338;
     --paper:#ffffff;
-    --line:#c9ced6;
-    --line-strong:#8a919c;
-    --muted:#5a616b;
-    --airway:#1d4ed8;
-    --airway-bg:#eaf0ff;
-    --circ:#b91c1c;
-    --circ-bg:#fdeaea;
-    --metab:#7c2d12;
-    --metab-bg:#fbeee4;
-    --neuro:#6b21a8;
-    --neuro-bg:#f4eafb;
-    --accent:#0f766e;
-    --accent-bg:#e5f4f2;
-    --warn:#92400e;
-    --warn-bg:#fff4e0;
+    --line:#d9dde2;
+    --line-strong:#9aa2ab;
+    --muted:#6e747b;
+    --airway:#2f6690;
+    --airway-bg:#eef3f8;
+    --circ:#a04848;
+    --circ-bg:#f8eeee;
+    --metab:#7d6a55;
+    --metab-bg:#f6f2ed;
+    --neuro:#5b6488;
+    --neuro-bg:#f0f1f6;
+    --accent:#2f6690;
+    --accent-bg:#eef3f8;
+    --warn:#7a5a1e;
+    --warn-bg:#fbf7ee;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:#eceff3;color:var(--ink);
+  html,body{margin:0;padding:0;background:#f4f5f7;color:#555555;
     font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
     font-size:11px;line-height:1.32;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .page{width:210mm;min-height:297mm;background:var(--paper);margin:10px auto;
@@ -140,15 +140,13 @@
   .dpanel .drug{background:#f1f3f7;padding:0 3px;border-radius:2px;font-weight:700;font-variant-numeric:tabular-nums;}
   .stepnum{display:inline-flex;width:15px;height:15px;border-radius:50%;background:var(--metab);
     color:#fff;font-size:8.5px;font-weight:700;align-items:center;justify-content:center;margin-right:5px;vertical-align:middle;}
-  /* ---------- top nav (screen only) ---------- */
-  .topnav{background:#0a0d12;color:#fff;border-bottom:1px solid #2a313d;}
-  .topnav-inner{max-width:210mm;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:4px;}
-  .topnav .brand{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
-    color:#7d8794;margin-right:16px;padding:11px 0;white-space:nowrap;}
-  .topnav a{color:#c4ccd6;text-decoration:none;font-size:13.5px;font-weight:600;
-    padding:12px 15px;border-bottom:3px solid transparent;transition:color .12s,border-color .12s;}
-  .topnav a:hover{color:#fff;}
-  .topnav a.active{color:#fff;border-bottom-color:var(--accent);}
+  /* ---------- top nav (screen only; matches assets/styles.css Slate theme) ---------- */
+  .topnav{background:#fff;border-bottom:1px solid #e1e4e8;font-size:13.5px;}
+  .topnav-inner{max-width:210mm;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:2px;overflow-x:auto;}
+  .topnav .brand{font-size:14px;font-weight:600;color:#2f6690;text-decoration:none;margin-right:16px;padding:12px 0;white-space:nowrap;}
+  .topnav a{color:#555;text-decoration:none;font-weight:500;padding:13px 12px 11px;border-bottom:2px solid transparent;white-space:nowrap;}
+  .topnav a:hover{color:#2f6690;}
+  .topnav a.active{color:#2f6690;border-bottom-color:#2f6690;}
   @media print{
     .topnav{display:none;}
     @page{size:A4;margin:0;}
@@ -169,11 +167,12 @@
 <!-- ============ TOP NAV (screen only) ============ -->
 <nav class="topnav">
   <div class="topnav-inner">
-    <span class="brand">MEPA / SIMPACT</span>
-    <a href="mepa-interactive.html">MEPA/SimPACT</a>
+    <a class="brand" href="index.html">Paediatric Anaesthesia</a>
+    <a href="index.html">Home</a>
+    <a href="mepa-interactive.html">Anaesthesia Emergencies</a>
     <a href="mepa-paediatric-emergency.html">Paediatric Emergency</a>
-    <a href="mepa-emergency-card.html" class="active">Emergency card</a>
-    <a href="mepa-drug-reference.html">Drug reference</a>
+    <a href="mepa-drug-reference.html">Drug Reference</a>
+    <a href="mepa-emergency-card.html" class="active">Emergency Card</a>
   </div>
 </nav>
 
@@ -182,7 +181,7 @@
   <div class="masthead">
     <div>
       <h1>Paediatric Anaesthesia — Emergency Drugs</h1>
-      <div class="sub">MEPA / SIMPACT · Weight-band quick reference</div>
+      <div class="sub">Paediatric Anaesthesia · Weight-band Quick Reference</div>
     </div>
     <div class="ctx">
       Doses per <b>APA</b> &amp; <b>RCUK</b> paediatric emergency chart<br>
@@ -195,13 +194,13 @@
     <b>Estimate weight (kg):</b>&nbsp; 0–12 mo → (age in mo + 9) ÷ 2 &nbsp;·&nbsp; 1–5 yr → (age + 4) × 2 &nbsp;·&nbsp; 6–12 yr → (age × 3) + 7. &nbsp;<br>Use actual/measured weight whenever available; these bands are for rapid draw-up only.
   </div>
 
-  <p class="matrix-title">Weight-banded doses</p>
+  <p class="matrix-title">Weight-banded Doses</p>
   <table class="drugs">
     <thead>
       <tr>
-        <th style="text-align:left;">Drug / indication</th>
+        <th style="text-align:left;">Drug / Indication</th>
         <th>Dose <small style="font-weight:500;">(APA/DAS/RCUK)</small></th>
-        <th style="background:#3b2f0e;">RXH</th>
+        <th style="background:#6b6450;">RXH</th>
         <th>≈1&nbsp;yr<span class="agecol">10&nbsp;kg</span></th>
         <th>≈3&nbsp;yr<span class="agecol">15&nbsp;kg</span></th>
         <th>≈5&nbsp;yr<span class="agecol">20&nbsp;kg</span></th>
@@ -211,25 +210,25 @@
     </thead>
     <tbody>
       <tr class="rule-row">
-        <th><span class="tag t-cir"></span>ADRENALINE — Arrest <small>IV/IO, every 3–5 min</small></th>
+        <th><span class="tag t-cir"></span>ADRENALINE — Arrest <small>IV/IO, Every 3–5 min</small></th>
         <td class="dose">10 mcg/kg<br><small>0.1 mL/kg of 1:10&nbsp;000</small></td>
-        <td class="rxh same">same<br><small>q4min</small></td>
+        <td class="rxh same">same<br><small>Every 4 min</small></td>
         <td class="dose">100 mcg</td><td class="dose">150 mcg</td><td class="dose">200 mcg</td><td class="dose">250 mcg</td><td class="dose">300 mcg</td>
       </tr>
       <tr>
-        <th><span class="tag t-cir"></span>ADRENALINE — Anaphylaxis <small>IM, 1:1000, repeat 5 min</small></th>
+        <th><span class="tag t-cir"></span>ADRENALINE — Anaphylaxis <small>IM, 1:1000, Repeat at 5 min</small></th>
         <td class="dose">IM by age band →</td>
         <td class="rxh">IV 1 mcg/kg<br><small>+ IM 10 mcg/kg</small></td>
         <td class="dose">150 mcg</td><td class="dose">150 mcg</td><td class="dose">300 mcg<br><small>(&gt;6 yr)</small></td><td class="dose">300 mcg</td><td class="dose">500 mcg<br><small>(&gt;12 yr)</small></td>
       </tr>
       <tr>
-        <th><span class="tag t-cir"></span>ATROPINE <small>IV/IO · max 4 mg</small></th>
+        <th><span class="tag t-cir"></span>ATROPINE <small>IV/IO · Max 4 mg</small></th>
         <td class="dose">20 mcg/kg</td>
         <td class="rxh same">0.02 mg/kg</td>
         <td class="dose">200 mcg</td><td class="dose">300 mcg</td><td class="dose">400 mcg</td><td class="dose">500 mcg</td><td class="dose">600 mcg</td>
       </tr>
       <tr>
-        <th><span class="tag t-air"></span>SUXAMETHONIUM <small>laryngospasm / RSI, IV</small></th>
+        <th><span class="tag t-air"></span>SUXAMETHONIUM <small>Laryngospasm / RSI, IV</small></th>
         <td class="dose">1–2 mg/kg<br><small>IM 4 mg/kg if no IV</small></td>
         <td class="rxh same">—</td>
         <td class="dose">10–20 mg</td><td class="dose">15–30 mg</td><td class="dose">20–40 mg</td><td class="dose">25–50 mg</td><td class="dose">30–60 mg</td>
@@ -241,63 +240,63 @@
         <td class="dose">12 mg</td><td class="dose">18 mg</td><td class="dose">24 mg</td><td class="dose">30 mg</td><td class="dose">36 mg</td>
       </tr>
       <tr>
-        <th><span class="tag t-neu"></span>PROPOFOL <small>induction / deepen, IV</small></th>
+        <th><span class="tag t-neu"></span>PROPOFOL <small>Induction / Deepen, IV</small></th>
         <td class="dose">2–3 mg/kg</td>
         <td class="rxh same">—</td>
         <td class="dose">20–30 mg</td><td class="dose">30–45 mg</td><td class="dose">40–60 mg</td><td class="dose">50–75 mg</td><td class="dose">60–90 mg</td>
       </tr>
       <tr class="rule-row">
-        <th><span class="tag t-met"></span>DANTROLENE — MH <small>IV, repeat q5min → max 30 mg/kg</small></th>
+        <th><span class="tag t-met"></span>DANTROLENE — MH <small>IV, Repeat Every 5 min → Max 30 mg/kg</small></th>
         <td class="dose">2.5 mg/kg</td>
-        <td class="rxh same">2.5 mg/kg q5min<br><small>up to 30 mg/kg</small></td>
+        <td class="rxh same">2.5 mg/kg q5min<br><small>Up to 30 mg/kg</small></td>
         <td class="dose">25 mg</td><td class="dose">37.5 mg</td><td class="dose">50 mg</td><td class="dose">62.5 mg</td><td class="dose">75 mg</td>
       </tr>
       <tr>
-        <th><span class="tag t-met"></span>INTRALIPID 20% — LAST <small>bolus, then infusion</small></th>
+        <th><span class="tag t-met"></span>INTRALIPID 20% — LAST <small>Bolus, then Infusion</small></th>
         <td class="dose">1.5 mL/kg</td>
         <td class="rxh same">—</td>
         <td class="dose">15 mL</td><td class="dose">22.5 mL</td><td class="dose">30 mL</td><td class="dose">37.5 mL</td><td class="dose">45 mL</td>
       </tr>
       <tr>
-        <th><span class="tag t-air"></span>SALBUTAMOL — Bronchospasm <small>neb; IV 15 mcg/kg slow</small></th>
+        <th><span class="tag t-air"></span>SALBUTAMOL — Bronchospasm <small>Neb; IV 15 mcg/kg Slow</small></th>
         <td class="dose">neb 2.5–5 mg</td>
         <td class="rxh">&lt;5 yr 2.5 mg<br>&gt;5 yr 5 mg</td>
         <td class="dose">150 mcg</td><td class="dose">225 mcg</td><td class="dose">300 mcg</td><td class="dose">375 mcg</td><td class="dose">450 mcg</td>
       </tr>
       <tr>
-        <th><span class="tag t-cir"></span>AMIODARONE <small>shockable arrest / tachyarr.</small></th>
-        <td class="dose">5 mg/kg<br><small>max 300 mg</small></td>
-        <td class="rxh">5% dex<br><small>over 30 min</small></td>
+        <th><span class="tag t-cir"></span>AMIODARONE <small>Shockable Arrest / Tachyarrhythmia</small></th>
+        <td class="dose">5 mg/kg<br><small>Max 300 mg</small></td>
+        <td class="rxh">5% dex<br><small>Over 30 min</small></td>
         <td class="dose">50 mg</td><td class="dose">75 mg</td><td class="dose">100 mg</td><td class="dose">125 mg</td><td class="dose">150 mg</td>
       </tr>
       <tr>
-        <th><span class="tag t-cir"></span>ADENOSINE — SVT <small>rapid push + flush</small></th>
+        <th><span class="tag t-cir"></span>ADENOSINE — SVT <small>Rapid Push + Flush</small></th>
         <td class="dose">100 → 200 → 300<br><small>mcg/kg</small></td>
-        <td class="rxh same">100/200/300<br><small>max 12 mg</small></td>
+        <td class="rxh same">100/200/300<br><small>Max 12 mg</small></td>
         <td class="dose">1→2→3 mg</td><td class="dose">1.5→3→4.5</td><td class="dose">2→4→6 mg</td><td class="dose">2.5→5→7.5</td><td class="dose">3→6→9 mg</td>
       </tr>
       <tr>
-        <th><span class="tag t-cir"></span>FLUID BOLUS <small>crystalloid, titrate</small></th>
+        <th><span class="tag t-cir"></span>FLUID BOLUS <small>Crystalloid, Titrate</small></th>
         <td class="dose">10–20 mL/kg</td>
-        <td class="rxh">5 mL/kg<br><small>→ 20 mL/kg max</small></td>
+        <td class="rxh">5 mL/kg<br><small>→ 20 mL/kg Max</small></td>
         <td class="dose">100–200</td><td class="dose">150–300</td><td class="dose">200–400</td><td class="dose">250–500</td><td class="dose">300–600</td>
       </tr>
       <tr class="rule-row">
-        <th><span class="tag t-met"></span>DEXTROSE 10% <small>hypoglycaemia, IV/IO</small></th>
+        <th><span class="tag t-met"></span>DEXTROSE 10% <small>Hypoglycaemia, IV/IO</small></th>
         <td class="dose">2 mL/kg</td>
         <td class="rxh same">2 mL/kg</td>
         <td class="dose">20 mL</td><td class="dose">30 mL</td><td class="dose">40 mL</td><td class="dose">50 mL</td><td class="dose">60 mL</td>
       </tr>
       <tr>
-        <th><span class="tag t-met"></span>CALCIUM CHLORIDE 10% <small>IV slow · max 10 mL</small></th>
+        <th><span class="tag t-met"></span>CALCIUM CHLORIDE 10% <small>IV Slow · Max 10 mL</small></th>
         <td class="dose">0.1–0.2 mL/kg</td>
-        <td class="rxh same">0.1–0.2 mL/kg<br><small>max 10 mL</small></td>
+        <td class="rxh same">0.1–0.2 mL/kg<br><small>Max 10 mL</small></td>
         <td class="dose">1–2 mL</td><td class="dose">1.5–3 mL</td><td class="dose">2–4 mL</td><td class="dose">2.5–5 mL</td><td class="dose">3–6 mL</td>
       </tr>
       <tr>
-        <th><span class="tag t-met"></span>CALCIUM GLUCONATE 10% <small>IV slow · max 20 mL</small></th>
+        <th><span class="tag t-met"></span>CALCIUM GLUCONATE 10% <small>IV Slow · Max 20 mL</small></th>
         <td class="dose">0.5 mL/kg</td>
-        <td class="rxh same">0.3–0.5 mL/kg<br><small>max 20 mL</small></td>
+        <td class="rxh same">0.3–0.5 mL/kg<br><small>Max 20 mL</small></td>
         <td class="dose">5 mL</td><td class="dose">7.5 mL</td><td class="dose">10 mL</td><td class="dose">12.5 mL</td><td class="dose">15 mL</td>
       </tr>
       <tr>
@@ -307,38 +306,38 @@
         <td class="dose">10 mg</td><td class="dose">15 mg</td><td class="dose">20 mg</td><td class="dose">25 mg</td><td class="dose">30 mg</td>
       </tr>
       <tr>
-        <th><span class="tag t-neu"></span>MAGNESIUM SULPHATE <small>IVI over 10–20 min</small></th>
-        <td class="dose">25–50 mg/kg<br><small>max 2 g</small></td>
+        <th><span class="tag t-neu"></span>MAGNESIUM SULPHATE <small>IV Infusion over 10–20 min</small></th>
+        <td class="dose">25–50 mg/kg<br><small>Max 2 g</small></td>
         <td class="rxh same">25–50 mg/kg</td>
         <td class="dose">0.25–0.5 g</td><td class="dose">0.4–0.75</td><td class="dose">0.5–1 g</td><td class="dose">0.6–1.25</td><td class="dose">0.75–1.5</td>
       </tr>
       <tr>
-        <th><span class="tag t-neu"></span>HYDROCORTISONE <small>anaphylaxis</small></th>
+        <th><span class="tag t-neu"></span>HYDROCORTISONE <small>Anaphylaxis</small></th>
         <td class="dose">by age →</td>
-        <td class="rxh">2–4 mg/kg<br><small>(RXH: weight-based)</small></td>
+        <td class="rxh">2–4 mg/kg<br><small>(RXH: Weight-based)</small></td>
         <td class="dose">50 mg</td><td class="dose">100 mg</td><td class="dose">100 mg</td><td class="dose">100 mg</td><td class="dose">200 mg<br><small>(&gt;12 yr)</small></td>
       </tr>
       <tr>
-        <th><span class="tag t-neu"></span>CHLORPHENAMINE <small>anaphylaxis (2nd line)</small></th>
+        <th><span class="tag t-neu"></span>CHLORPHENAMINE <small>Anaphylaxis (2nd Line)</small></th>
         <td class="dose">by age →</td>
         <td class="rxh same">—</td>
         <td class="dose">2.5 mg</td><td class="dose">2.5 mg</td><td class="dose">5 mg<br><small>(6–12)</small></td><td class="dose">5 mg</td><td class="dose">10 mg<br><small>(&gt;12 yr)</small></td>
       </tr>
       <tr>
-        <th><span class="tag t-air"></span>NALOXONE <small>post-op sedation · repeat q2min</small></th>
+        <th><span class="tag t-air"></span>NALOXONE <small>Post-op Sedation · Repeat Every 2 min</small></th>
         <td class="dose">2 mcg/kg</td>
         <td class="rxh same">2 mcg/kg</td>
         <td class="dose">20 mcg</td><td class="dose">30 mcg</td><td class="dose">40 mcg</td><td class="dose">50 mcg</td><td class="dose">60 mcg</td>
       </tr>
       <tr>
-        <th><span class="tag t-neu"></span>MANNITOL <small>↑ICP / diuresis</small></th>
+        <th><span class="tag t-neu"></span>MANNITOL <small>↑ICP / Diuresis</small></th>
         <td class="dose">0.5 g/kg</td>
         <td class="rxh same">0.25–0.5 g/kg</td>
         <td class="dose">5 g</td><td class="dose">7.5 g</td><td class="dose">10 g</td><td class="dose">12.5 g</td><td class="dose">15 g</td>
       </tr>
       <tr>
-        <th><span class="tag t-met"></span>SODIUM BICARBONATE 8.4% <small>see formula if BE known</small></th>
-        <td class="dose">1 mL/kg<br><small>if gas unavailable</small></td>
+        <th><span class="tag t-met"></span>SODIUM BICARBONATE 8.4% <small>See Formula if BE Known</small></th>
+        <td class="dose">1 mL/kg<br><small>If Gas Unavailable</small></td>
         <td class="rxh same">BE×wt/6 (&gt;5kg)<br><small>BE×wt/4 (&lt;5kg)</small></td>
         <td class="dose">10 mL</td><td class="dose">15 mL</td><td class="dose">20 mL</td><td class="dose">25 mL</td><td class="dose">30 mL</td>
       </tr>
@@ -357,34 +356,34 @@
   </div>
 
   <div class="formulae">
-    <div class="fcard"><h4>ETT cuffed (RXH)</h4><div class="val">age⁄4 + 3.5 <small>mm ID</small></div></div>
-    <div class="fcard"><h4>ETT length (oral)</h4><div class="val">size×3 <small>+2 nasal, cm at lip</small></div></div>
-    <div class="fcard"><h4>Defib — DC shock</h4><div class="val">4 J/kg <small>every cycle</small></div></div>
-    <div class="fcard"><h4>Adrenaline infusion</h4><div class="val">0.05–0.3 <small>mcg/kg/min</small></div></div>
+    <div class="fcard"><h4>ETT Cuffed (RXH)</h4><div class="val">age⁄4 + 3.5 <small>mm ID</small></div></div>
+    <div class="fcard"><h4>ETT Length (Oral)</h4><div class="val">size×3 <small>+2 Nasal, cm at Lip</small></div></div>
+    <div class="fcard"><h4>Defib — DC Shock</h4><div class="val">4 J/kg <small>Every Cycle</small></div></div>
+    <div class="fcard"><h4>Adrenaline Infusion</h4><div class="val">0.05–0.3 <small>mcg/kg/min</small></div></div>
   </div>
 
   <div class="minigrid">
     <table class="mini">
-      <caption>Normal vital signs by age (RXH)</caption>
+      <caption>Normal Vital Signs by Age (RXH)</caption>
       <thead>
-        <tr><th>Age</th><th>Resp rate <span class="u">/min</span></th><th>Heart rate <span class="u">/min</span></th><th>Systolic BP <span class="u">mmHg</span></th></tr>
+        <tr><th>Age</th><th>Resp Rate <span class="u">/min</span></th><th>Heart Rate <span class="u">/min</span></th><th>Systolic BP <span class="u">mmHg</span></th></tr>
       </thead>
       <tbody>
         <tr><th>Neonate</th><td>25–50</td><td>120–170</td><td>80–90 <span class="u">(&lt;6 mo)</span></td></tr>
-        <tr><th>1 year</th><td>20–40</td><td>110–160</td><td>85–100 <span class="u">(2–4 yr)</span></td></tr>
+        <tr><th>1 yr</th><td>20–40</td><td>110–160</td><td>85–100 <span class="u">(2–4 yr)</span></td></tr>
         <tr><th>2–7 yr</th><td>20–30</td><td>90–140 <span class="u">(3 yr)</span></td><td>90–110 <span class="u">(5–11 yr)</span></td></tr>
         <tr><th>8–11 yr</th><td>15–25</td><td>70–120</td><td>100–120 <span class="u">(&gt;12 yr)</span></td></tr>
         <tr><th>&gt;12 yr</th><td>12–24</td><td>60–110 <span class="u">(&gt;14 yr)</span></td><td>—</td></tr>
       </tbody>
     </table>
     <table class="mini">
-      <caption>DC energy (synchronised unless *)</caption>
+      <caption>DC Energy (Synchronised Unless *)</caption>
       <thead>
         <tr><th>Indication</th><th>1st</th><th>2nd</th></tr>
       </thead>
       <tbody>
         <tr><th>SVT</th><td>1 J/kg</td><td>2 J/kg</td></tr>
-        <tr><th>VT (with pulse)</th><td>2 J/kg</td><td>4 J/kg</td></tr>
+        <tr><th>VT (with Pulse)</th><td>2 J/kg</td><td>4 J/kg</td></tr>
         <tr><th>Defib* <span class="u">VF/pVT</span></th><td colspan="2">4 J/kg</td></tr>
       </tbody>
     </table>
@@ -404,12 +403,12 @@
   <div class="masthead">
     <div>
       <h1>Crisis Algorithms — Airway / Respiratory</h1>
-      <div class="sub">MEPA / SIMPACT · Commonwealth guidelines (APA · DAS · AAGBI · RCUK)</div>
+      <div class="sub">Paediatric Anaesthesia · Commonwealth Guidelines (APA · DAS · AAGBI · RCUK)</div>
     </div>
     <div class="ctx">Declare the emergency early · assign roles<br><b>Call for help before you need it.</b></div>
   </div>
   <div class="crm">
-    <h3>Non-technical skills — scored in every scenario</h3>
+    <h3>Non-technical Skills — Scored in Every Scenario</h3>
     <ul>
       <li><b>Declare</b> the emergency out loud &amp; name it</li>
       <li><b>Call for help</b> early — senior + runner</li>
@@ -436,7 +435,7 @@
     </div>
       </div>
 
-  <div class="algo-head"><h2>Inhaled Foreign Body / Rigid Bronchoscopy</h2><span class="pill">Airway · Shared airway</span></div>
+  <div class="algo-head"><h2>Inhaled Foreign Body / Rigid Bronchoscopy</h2><span class="pill">Airway · Shared Airway</span></div>
   <div class="algo air">
     <div class="cols2">
       <ol>
@@ -459,12 +458,12 @@
   <div class="masthead">
     <div>
       <h1>Difficult Airway Pathways</h1>
-      <div class="sub">MEPA / SIMPACT · APA / DAS paediatric algorithms (1–8 yr)</div>
+      <div class="sub">Paediatric Anaesthesia · APA / DAS Paediatric Algorithms (1–8 yr)</div>
     </div>
     <div class="ctx">Give <b>100% O₂</b> &amp; <b>call for help</b> at step one, every pathway<br>Maintain <b>spontaneous ventilation</b> until the airway is secure<br><b>Don't repeat what just failed — change something.</b></div>
   </div>
   <div class="crm">
-    <h3>NAP4 lessons — why paediatric airways go wrong</h3>
+    <h3>NAP4 Lessons — Why Paediatric Airways Go Wrong</h3>
     <ul>
       <li>Poor assessment &amp; <b>failure to plan for failure</b></li>
       <li><b>Repeated intubation attempts</b> → oedema → CICO</li>
@@ -493,7 +492,7 @@
     <span class="flag">Functional causes (light anaesthesia, laryngospasm, gastric inflation) are commoner than anatomical — deepen and decompress early.</span>
   </div>
 
-  <div class="algo-head"><h2>Cannot Ventilate via LMA</h2><span class="pill">Airway · rescue</span></div>
+  <div class="algo-head"><h2>Cannot Ventilate via LMA</h2><span class="pill">Airway · Rescue</span></div>
   <div class="algo air">
         <div class="cols2">
       <ol><li><b>100% O₂ + call for help.</b> The LMA is your rescue device — optimise it before abandoning it.</li><li><b>Reseat / resize:</b> check depth (light → laryngospasm), reposition head (sniffing), jaw thrust, check cuff. Try up/down a size.</li><li><b>Exclude patient causes:</b> laryngospasm (deepen: Propofol), bronchospasm, gastric distension (NG/OG), breath-stacking (disconnect).</li></ol>
@@ -544,7 +543,7 @@
   <div class="masthead">
     <div>
       <h1>Crisis Algorithms — Circulation</h1>
-      <div class="sub">MEPA / SIMPACT · APLS · RCUK · AAGBI</div>
+      <div class="sub">Paediatric Anaesthesia · APLS · RCUK · AAGBI</div>
     </div>
     <div class="ctx">Declare the emergency early · assign roles<br><b>Call for help before you need it.</b></div>
   </div>
@@ -565,7 +564,7 @@
     <span class="flag">In children, hypoxia & hypovolaemia are the usual precipitants — FIX AIRWAY AND VOLUME FIRST</span>
   </div>
 
-  <div class="algo-head"><h2>Acute Hypotension</h2><span class="pill">AAGBI QRH · circulation</span></div>
+  <div class="algo-head"><h2>Acute Hypotension</h2><span class="pill">AAGBI QRH · Circulation</span></div>
   <div class="algo cir">
     <div class="cols2">
       <ol>
@@ -624,7 +623,7 @@
   <div class="masthead">
     <div>
       <h1>Crisis Algorithms — Metabolic</h1>
-      <div class="sub">MEPA / SIMPACT · AAGBI · RXH · APLS</div>
+      <div class="sub">Paediatric Anaesthesia · AAGBI · RXH · APLS</div>
     </div>
     <div class="ctx">Declare the emergency early · assign roles<br><b>Confirm K⁺ on ABG before treating.</b></div>
   </div>
@@ -664,7 +663,7 @@
     <span class="flag">Key distinction: AIR = Hyperkalaemic arrest (treat the K⁺); MH = Hypermetabolic (give Dantrolene). Don't confuse them.</span>
   </div>
 
-  <div class="algo-head"><h2>LA Systemic Toxicity</h2><span class="pill">Neuro · AAGBI</span></div>
+  <div class="algo-head"><h2>Local Anaesthetic Systemic Toxicity (LAST)</h2><span class="pill">Neuro · AAGBI</span></div>
   <div class="algo neu">
         <div class="cols2">
       <ol><li><span class="stop">STOP</span> injecting LA; <b>call for help</b>; <b>100% O₂</b>, secure airway.</li><li><b>Control seizures:</b> Benzodiazepine / small Propofol (avoid large Propofol if unstable).</li><li><span class="drug">Intralipid 20% 1.5 mL/kg</span> bolus over 1 min, then infusion <span class="drug">15 mL/kg/h</span>.</li></ol>
@@ -698,11 +697,11 @@
   <div class="masthead">
     <div>
       <h1>Systems &amp; Equipment Failure</h1>
-      <div class="sub">MEPA / SIMPACT · AAGBI Quick Reference Handbook</div>
+      <div class="sub">Paediatric Anaesthesia · AAGBI Quick Reference Handbook</div>
     </div>
     <div class="ctx"><b>Disconnect &amp; hand-ventilate</b> turns a machine problem into a simple airway check<br><b>Maintain oxygenation &amp; anaesthesia before fault-finding.</b></div>
   </div>
-  <div class="algo-head"><h2>DOPES — Sudden Deterioration in an Intubated Child</h2><span class="pill">AAGBI QRH · systematic</span></div>
+  <div class="algo-head"><h2>DOPES — Sudden Deterioration in an Intubated Child</h2><span class="pill">AAGBI QRH · Systematic</span></div>
   <div class="algo neu">
     <div class="cols2">
       <ol>
@@ -719,7 +718,7 @@
     <span class="flag">Disconnect and hand-ventilate first — if in doubt, take the machine out of the circuit.</span>
   </div>
 
-  <div class="algo-head"><h2>Acute Desaturation + Loss of ETCO₂</h2><span class="pill">AAGBI QRH · airway / circ</span></div>
+  <div class="algo-head"><h2>Acute Desaturation + Loss of ETCO₂</h2><span class="pill">AAGBI QRH · Airway / Circulation</span></div>
   <div class="algo cir">
     <div class="cols2">
       <ol>
@@ -777,7 +776,7 @@
   <div class="masthead">
     <div>
       <h1>Blood Products &amp; Massive Transfusion</h1>
-      <div class="sub">MEPA / SIMPACT · RXH protocols</div>
+      <div class="sub">Paediatric Anaesthesia · RXH Protocols</div>
     </div>
     <div class="ctx">Emergency haemorrhage reference<br><b>Warm blood · monitor K⁺ &amp; Ca²⁺.</b></div>
   </div>
@@ -785,16 +784,16 @@
   <div class="algo cir">
     <div class="cols2 dpanel">
       <dl>
-        <dt>Packed red cells</dt><dd>(Desired−Actual Hb) × wt × 4 mL <br><small>(30 mL/kg in MTP)</small></dd>
-        <dt>Tranexamic acid</dt><dd><span class="drug">5–10 mg/kg</span> over 20 min + 10 mg/kg/h infusion</dd>
+        <dt>Packed Red Cells</dt><dd>(Desired−Actual Hb) × wt × 4 mL <br><small>(30 mL/kg in MTP)</small></dd>
+        <dt>Tranexamic Acid</dt><dd><span class="drug">5–10 mg/kg</span> over 20 min + 10 mg/kg/h infusion</dd>
         <dt>Platelets</dt><dd>10 mL/kg/dose</dd>
         <dt>FFP</dt><dd>15 mL/kg/dose</dd>
       </dl>
       <dl>
-        <dt>Cryoprecipitate</dt><dd>1 bag per 5 kg &nbsp;<small>(individual, NOT pooled bags)</small></dd>
+        <dt>Cryoprecipitate</dt><dd>1 bag per 5 kg &nbsp;<small>(Individual, NOT Pooled Bags)</small></dd>
         <dt>Albumin</dt><dd>4% solution, 5 mL/kg boluses</dd>
-        <dt>PRBC unit size</dt><dd>Paed 130±25 mL · Neonate 55±20 mL<br>Adult 300±100 mL</dd>
-        <dt>Platelet unit</dt><dd>Infant apheresis 50±10 mL<br>Paed single-donor 150±50 mL</dd>
+        <dt>PRBC Unit Size</dt><dd>Paed 130±25 mL · Neonate 55±20 mL<br>Adult 300±100 mL</dd>
+        <dt>Platelet Unit</dt><dd>Infant apheresis 50±10 mL<br>Paed single-donor 150±50 mL</dd>
       </dl>
     </div>
   </div>
@@ -811,8 +810,8 @@
         </ol>
         <p style="margin:6px 0 4px;font-weight:700;">Packs</p>
         <div class="dpanel"><dl>
-          <dt>MTP pack 1</dt><dd>PRBC 30 mL/kg + FFP 15 mL/kg</dd>
-          <dt>MTP pack 2*</dt><dd>Cryo 4 units/kg + Platelets 10 mL/kg</dd>
+          <dt>MTP Pack 1</dt><dd>PRBC 30 mL/kg + FFP 15 mL/kg</dd>
+          <dt>MTP Pack 2*</dt><dd>Cryo 4 units/kg + Platelets 10 mL/kg</dd>
         </dl></div>
         <p style="margin:3px 0 0;font-size:8.6px;color:var(--muted);">*if ongoing bleeding</p>
       </div>
@@ -830,7 +829,7 @@
   </div>
 
   <div class="footer">
-    <span>MEPA / SIMPACT · full crisis reference</span>
+    <span>Paediatric Anaesthesia · Full Crisis Reference</span>
     <span>APA · DAS · AAGBI · RCUK · RXH · AAGBI QRH · Verify against SAMF &amp; local formulary</span>
   </div>
 </section>

@@ -4,67 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- ═══════════════════════════════════════════════════════════
-     MEPA / SIMPACT — PAGE TEMPLATE
+     PAEDIATRIC ANAESTHESIA — PAGE TEMPLATE
      ───────────────────────────────────────────────────────────
      To make a new page:
        1. Copy this file → mepa-<yourpage>.html
-       2. Set <title> and <body data-page="..."> (a unique id)
+       2. Set <title>, <body data-page="..."> (a unique id) and
+          the title/tag passed to MEPA.init()
        3. Add the page to NAV_PAGES in assets/site.js
           (id must match data-page; href must match the filename)
        4. Fill in ALGOS() below with your content
        5. Open it in a browser (or push to GitHub Pages)
 
-     Shared engine (assets/calc.js) gives you, for free:
-       estimateWeight()  → {kg, source}   (RXH formulae + measured override)
-       ettSize(), ettLength()
-       D(perKg, unit, {max, roundTo, prefix, suffix, label})
-                         → a live dose chip that shows its working
-       calcVal(perKg, unit) → {num, unit, working, kg}  (bare value)
-       fmtNum(n), renderVitals()
-
-     Shared runtime (assets/site.js) gives you:
-       the navbar, the sticky patient bar, the selector,
-       the accordion, print-clean PDF export, and NTS/NAP4 blocks.
+     Shared files:
+       assets/growth-uk-who.js  UK-WHO BMI LMS tables
+       assets/calc.js     patient state, estimateWeight(), bodySize()
+                          (BMI centile, IBW, AdjBW, LBW), dosingWeight(),
+                          D(perKg, unit, {max, hi, basis, label…}) → live dose chip
+       assets/drugs.js    EMERG + GROUPS drug data, renderDrugTable(),
+                          renderEmergTable(), renderSoba(), renderEttRef()
+       assets/emergencies.js  the crisis algorithms (ALGOS)
+       assets/site.js     navbar + theme picker, patient bar, selector,
+                          search, accordion, print-clean PDF, NTS/NAP4
+       assets/theme.js    applies the saved theme before first paint
      ═══════════════════════════════════════════════════════════ -->
-<title>MEPA / SIMPACT — New Page</title>
+<title>New Page — Paediatric Anaesthesia</title>
+<script src="assets/theme.js"></script>
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body data-page="template">
 
-<!-- navbar is injected by site.js -->
-
-<!-- ============ PATIENT BAR (shared markup — keep as-is) ============ -->
-<div class="patientbar">
-  <div class="pb-inner">
-    <div class="pb-title">
-      <h1>New Page Title</h1>
-      <div class="tag">MEPA / SIMPACT · doses live-calculated from weight</div>
-    </div>
-    <div class="field">
-      <label for="ageVal">Age</label>
-      <div class="row">
-        <input id="ageVal" type="number" min="0" step="0.5" inputmode="decimal" placeholder="—">
-        <select id="ageUnit">
-          <option value="years" selected>years</option>
-          <option value="months">months</option>
-        </select>
-      </div>
-    </div>
-    <div class="field">
-      <label for="measWt">Measured weight</label>
-      <div class="row">
-        <input id="measWt" type="number" min="0" step="0.1" inputmode="decimal" placeholder="if known">
-        <span class="unit">kg</span>
-      </div>
-    </div>
-    <div class="estwt" id="estWtBox">
-      <div class="lbl" id="estWtLbl">Est. weight</div>
-      <div class="val" id="estWtVal">—</div>
-    </div>
-    <button class="pb-clear" id="clearBtn" title="Reset patient">Reset</button>
-  </div>
-  <div class="noweight" id="noWeight">Enter an age (or a measured weight) to calculate doses. Age also sets ETT size and normal vital signs.</div>
-</div>
+<!-- navbar and patient bar are injected by site.js -->
+<div class="patientbar" id="patientbar"></div>
 
 <div class="wrap">
   <aside class="selector">
@@ -75,113 +45,40 @@
 </div>
 
 <div class="footer">
-  <span><b>MEPA / SIMPACT</b> · Guidelines: APA · DAS · AAGBI · RCUK · RXH local protocols</span>
-  <span>Live tool — always <b>verify against the SAMF</b> and your local formulary. Doses shown with working; check every number.</span>
+  <span><b>Paediatric Anaesthesia</b> · Guidelines: APA · DAS · AAGBI · RCUK · RXH Local Protocols</span>
+  <span>Live tool — always <b>verify against the SAMF</b> and your local formulary.</span>
 </div>
 
+<script src="assets/growth-uk-who.js"></script>
 <script src="assets/calc.js"></script>
+<script src="assets/drugs.js"></script>
 <script src="assets/site.js"></script>
 <script>
 /* ============================================================
-   PAGE DATA
-   Each entry becomes a selectable item + an accordion panel.
-   Required: id, group, c (colour: air|cir|met|neu), title.
-   Optional: pill, flag, showNap4.
-
-   Colour classes:  air = blue · cir = red · met = brown · neu = purple
-   Groups control selector order (see DEFAULT_GROUP_ORDER in site.js);
-   any group name works — unknown groups are appended at the end.
+   PAGE DATA — capitalise titles, pills and labels in Title Case;
+   step text stays in sentence case.
    ============================================================ */
 function ALGOS(){ return [
 
-/* ---------- BLOCK TYPE 1: STEP ALGORITHM ----------
-   A numbered protocol. Embed live doses with D().            */
-{id:'example-algo', group:'Circulation', c:'cir',
- title:'Example Protocol', pill:'Example',
- steps:[
-  `<b>Call for help</b> and state the emergency.`,
-  `Give Adrenaline ${D(10,'mcg')} IV/IO.`,
-  `Atropine ${D(20,'mcg',{max:4000})} if bradycardic (caps at 4 mg).`,
-  `Fluid bolus ${D(10,'mL')} crystalloid, reassess.`,
-  `<span class="stop">STOP</span> and reassess after each intervention.`
- ],
- flag:`Example warning flag — highlighted in amber for a key safety point.`},
+  /* a step-list item (dose chips calculate live; basis = SOBA dosing weight) */
+  {id:'example', group:'Airway / Respiratory', c:'air', title:'Example Emergency', pill:'Airway',
+   steps:[
+     `<b>Call for help</b>; 100% O₂.`,
+     `Give Propofol ${D(1,'mg',{hi:2,basis:'IBW'})} IV.`,
+   ],
+   flag:`One-line safety reminder.`},
 
-/* ---------- BLOCK TYPE 2: CUSTOM HTML PANEL ----------
-   Full control. Use calcVal() for bare numbers, or inline
-   the same chip markup as the dose engine.                   */
-{id:'example-custom', group:'Metabolic', c:'met',
- title:'Example Custom Panel', pill:'Custom',
- type:'custom', html:()=>{
-   const v = calcVal(0.5,'mL');   // e.g. 0.5 mL/kg
-   const chip = v
-     ? `<span class="dose"><span class="calc">${v.num} ${v.unit}</span><span class="work">${v.working}</span></span>`
-     : `<span class="dose noval"><span class="calc">0.5 mL/kg</span></span>`;
-   return `<p>Free-form HTML. A computed value: ${chip}</p>
-     <div class="refgrid">
-       <div class="refcard"><h4>Reference card</h4><div class="big">42 <small>units</small></div><div class="note">a note</div></div>
-       <div class="refcard"><h4>Another</h4><div class="big">${v?v.kg+' <small>kg</small>':'—'}</div><div class="note">active weight</div></div>
-     </div>`;
- }},
-
-/* ---------- BLOCK TYPE 3: LIVE DRUG / DOSE TABLE ----------
-   A table whose right column computes per-patient doses.
-   Define rows as {name, note, perKg, unit, max?, rxh?, same?}.*/
-{id:'example-table', group:'Reference', c:'met',
- title:'Example Dose Table', pill:'Reference',
- type:'custom', html:()=>{
-   const rows=[
-     {name:'Drug A', note:'IV', perKg:10, unit:'mcg', rxh:'same', same:true},
-     {name:'Drug B', note:'IV slow · max 20 mL', perKg:0.5, unit:'mL', max:20, rxh:'0.3–0.5 mL/kg'},
-   ];
-   const w=estimateWeight();
-   const body=rows.map(d=>{
-     let live;
-     if(!w){ live=`<td class="live noval">—</td>`; }
-     else { const c=calcDose(d); live=`<td class="live">${c.result}<span class="w">${c.working}</span></td>`; }
-     const rxhCls=d.same?'rxh same':'rxh';
-     return `<tr>
-       <th>${d.name}<small>${d.note}</small></th>
-       <td>${d.perKg} ${d.unit}/kg${d.max?'<br><small style="color:var(--muted)">max '+d.max+' '+d.unit+'</small>':''}</td>
-       <td class="${rxhCls}">${d.rxh||'—'}</td>
-       ${live}
-     </tr>`;
-   }).join('');
-   return `<div class="drugwrap"><table class="drugs">
-     <thead><tr><th>Drug / indication</th><th>Dose (guideline)</th><th>RXH if different</th>
-       <th>For this patient${w?' ('+w.kg+' kg)':''}</th></tr></thead>
-     <tbody>${body}</tbody></table></div>
-     <p class="hint">Live column computes the exact dose from the active weight and shows the arithmetic.</p>`;
- }},
-
-/* ---------- BLOCK TYPE 4: REFERENCE CARDS + VITALS ----------
-   Static-ish reference that still reacts to age/weight.      */
-{id:'example-ref', group:'Reference', c:'air',
- title:'Example Reference', pill:'Reference',
- type:'custom', html:()=>{
-   const s=ettSize(), l=ettLength();
-   return `<div class="refgrid">
-     <div class="refcard"><h4>ETT cuffed (RXH)</h4><div class="big">${s!=null?s+' <small>mm ID</small>':'—'}</div><div class="note">age/4 + 3.5</div></div>
-     <div class="refcard"><h4>ETT length</h4><div class="big">${l!=null?l+' <small>cm</small>':'—'}</div><div class="note">size × 3</div></div>
-   </div>
-   <h4 style="margin:14px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);">Normal vital signs</h4>
-   ${renderVitals()}`;
- }},
+  /* a custom HTML item */
+  {id:'emergdrugs', group:'Reference', c:'acc', title:'All Emergency Drugs (Live Table)', pill:'Reference',
+   type:'custom', html:()=>renderEmergTable()},
 
 ]; }
 
-/* ============================================================
-   BOOTSTRAP
-   ============================================================ */
 MEPA.init({
+  title: 'New Page Title',
+  tag: 'Doses Live-calculated from Weight',
   algos: ALGOS,
-  emptyTitle: 'Pick an item to begin',
-  emptyBody: 'Choose from the list on the left. It opens here with every dose calculated for the current patient.'
-  // optional overrides:
-  // groupOrder: ['Circulation','Metabolic','Reference'],
-  // ntsGroups: [],          // which groups get the NTS block (default: all but Reference)
-  // nap4Groups: [],         // which groups get the NAP4 block (default: airway pathways)
-  // autoOpenFirst: true
+  searchPlaceholder: 'Search'
 });
 </script>
 </body>

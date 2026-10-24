@@ -2,12 +2,69 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=mepa-interactive.html">
-<link rel="canonical" href="mepa-interactive.html">
-<title>MEPA / SIMPACT</title>
-<script>window.location.replace("mepa-interactive.html");</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paediatric Anaesthesia</title>
+<script src="assets/theme.js"></script>
+<link rel="stylesheet" href="assets/styles.css">
 </head>
-<body>
-<p>Redirecting to the <a href="mepa-interactive.html">MEPA/SimPACT tool</a>…</p>
+<body data-page="home">
+
+<!-- navbar is injected by site.js -->
+
+<main class="home">
+  <h1>Paediatric Anaesthesia</h1>
+  <p class="lede">Crisis algorithms, live weight-based doses and SOBA obesity dosing weights.</p>
+
+  <div class="search">
+    <input type="search" id="homeSearch" placeholder="Search Drugs and Emergencies — e.g. Adrenaline, Laryngospasm, LAST" aria-label="Search drugs and emergencies" autocomplete="off" autofocus>
+  </div>
+  <div class="results" id="homeResults"></div>
+
+  <div class="tiles" id="tiles">
+    <a class="tile" href="mepa-interactive.html"><h2>Anaesthesia Emergencies</h2><p>MEPA / SimPACT crisis algorithms with live doses, NTS and NAP4 prompts.</p></a>
+    <a class="tile" href="mepa-paediatric-emergency.html"><h2>Paediatric Emergency</h2><p>The same algorithms with non-technical skills as one drop-down reference.</p></a>
+    <a class="tile" href="mepa-drug-reference.html"><h2>Drug Reference</h2><p>Every drug group, PCA and infusions, with TBW / IBW / AdjBW dosing weights.</p></a>
+    <a class="tile" href="mepa-drug-reference.html?open=soba"><h2>Obesity &amp; Dosing Weights</h2><p>BMI centile, IBW, AdjBW and LBW, plus the SOBA quick reference.</p></a>
+    <a class="tile" href="mepa-emergency-card.html"><h2>Emergency Card</h2><p>Printable A4 weight-band card and algorithms.</p></a>
+  </div>
+</main>
+
+<div class="footer">
+  <span><b>Paediatric Anaesthesia</b> · Guidelines: APA · DAS · AAGBI · RCUK · SOBA · RXH Local Protocols</span>
+  <span>Always <b>verify against the SAMF</b> and your local formulary.</span>
+</div>
+
+<script src="assets/growth-uk-who.js"></script>
+<script src="assets/calc.js"></script>
+<script src="assets/drugs.js"></script>
+<script src="assets/emergencies.js"></script>
+<script src="assets/site.js"></script>
+<script>
+renderNavbar();
+
+/* site-wide search: drugs → Drug Reference (?q=), emergencies → Anaesthesia Emergencies (?open=) */
+(function(){
+  const inp=document.getElementById('homeSearch'), out=document.getElementById('homeResults');
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const plain=h=>String(h||'').replace(/<[^>]+>/g,' ').replace(/&[a-z]+;/g,' ');
+  const emerg=ALGOS();
+  function run(){
+    const q=inp.value.trim();
+    if(!q){ out.innerHTML=''; return; }
+    const terms=q.toLowerCase().split(/\s+/);
+    const hit=t=>terms.every(w=>t.toLowerCase().includes(w));
+    const e=emerg.filter(a=>hit(plain([a.title,a.pill,a.group].concat(a.steps||[]).join(' ')))).slice(0,8);
+    const seen=new Set();
+    const d=allDrugs().filter(x=>drugMatches(x,q)).filter(x=>{const k=x.name+'|'+x._group; if(seen.has(k)) return false; seen.add(k); return true;}).slice(0,12);
+    let html='';
+    if(e.length) html+='<div class="sec">Emergencies</div>'+e.map(a=>`<a href="mepa-interactive.html?open=${a.id}">${esc(plain(a.title))}<span>${esc(a.group)}</span></a>`).join('');
+    if(d.length) html+='<div class="sec">Drugs</div>'+d.map(x=>`<a href="mepa-drug-reference.html?q=${encodeURIComponent(plain(x.name).replace('*','').trim())}">${esc(plain(x.name))} <small class="muted">${esc(plain(x.note))}</small><span>${esc(x._group)}</span></a>`).join('');
+    if(!html) html='<p class="hint">No matches.</p>';
+    out.innerHTML=html;
+  }
+  inp.addEventListener('input',run);
+  inp.addEventListener('keydown',ev=>{ if(ev.key==='Enter'){ const a=out.querySelector('a'); if(a) location.href=a.href; } });
+})();
+</script>
 </body>
 </html>
